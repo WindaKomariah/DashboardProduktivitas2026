@@ -33,9 +33,9 @@ st.set_page_config(
 st.markdown("""
 <style>
 /* ========================= GLOBAL ========================= */
-[data-testid="stAppViewContainer"] { background:#f5f7fb; }
-[data-testid="stHeader"] { background:rgba(255,255,255,.96); border-bottom:1px solid #e6ebf2; }
-.block-container { padding-top:1.5rem; padding-bottom:2rem; max-width:1500px; }
+[data-testid="stAppViewContainer"] { background: #f5f7fb; }
+[data-testid="stHeader"] { background: rgba(255,255,255,.96); border-bottom: 1px solid #e6ebf2; }
+.block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1500px; }
 h1,h2,h3 { color:#123b69 !important; letter-spacing:-.02em; }
 p,li { color:#334e68; }
 [data-testid="stCaptionContainer"] { color:#6b7c93 !important; }
@@ -43,135 +43,60 @@ p,li { color:#334e68; }
 /* ========================= SIDEBAR ========================= */
 section[data-testid="stSidebar"] { background:linear-gradient(180deg,#0b2f5b 0%,#104b82 55%,#0d4275 100%); }
 section[data-testid="stSidebar"] > div { background:transparent; }
+section[data-testid="stSidebar"] * { color:#f5f9ff; }
+section[data-testid="stSidebar"] hr { border-color:rgba(255,255,255,.18); }
+section[data-testid="stSidebar"] [data-testid="stRadio"] label { border-radius:10px; padding:8px 10px; margin:3px 0; transition:.2s ease; }
+section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover { background:rgba(255,255,255,.10); }
 section[data-testid="stSidebar"] label { color:#fff !important; font-weight:600 !important; }
 
-/* Teks seluruh isi sidebar agar tidak gelap di atas background biru */
-section[data-testid="stSidebar"] p,
-section[data-testid="stSidebar"] span,
-section[data-testid="stSidebar"] li,
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3,
-section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span {
-    color:#ffffff !important;
-    -webkit-text-fill-color:#ffffff !important;
-    opacity:1 !important;
+/* ========================= SELECTBOX FIX ========================= */
+section[data-testid="stSidebar"] div[data-baseweb="select"] { width:100% !important; }
+section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+    background:#fff !important; border:1px solid #c9d7e6 !important; border-radius:10px !important;
+    min-height:42px !important; box-shadow:0 2px 6px rgba(0,0,0,.08) !important;
 }
+section[data-testid="stSidebar"] div[data-baseweb="select"] * {
+    color:#173f6b !important; -webkit-text-fill-color:#173f6b !important; opacity:1 !important;
+}
+section[data-testid="stSidebar"] div[data-baseweb="select"] [class*="singleValue"],
+section[data-testid="stSidebar"] div[data-baseweb="select"] [class*="SingleValue"] {
+    color:#173f6b !important; -webkit-text-fill-color:#173f6b !important; font-weight:600 !important; opacity:1 !important;
+}
+section[data-testid="stSidebar"] div[data-baseweb="select"] input {
+    color:#173f6b !important; -webkit-text-fill-color:#173f6b !important; opacity:1 !important; caret-color:#173f6b !important;
+}
+section[data-testid="stSidebar"] div[data-baseweb="select"] input::placeholder {
+    color:#7b8da3 !important; -webkit-text-fill-color:#7b8da3 !important; opacity:1 !important;
+}
+section[data-testid="stSidebar"] div[data-baseweb="select"] svg { color:#315b83 !important; fill:#315b83 !important; }
 
-/* Khusus menu navigasi / radio: ikon dan nama menu ikut putih */
-section[data-testid="stSidebar"] [data-testid="stRadio"] label,
-section[data-testid="stSidebar"] [data-testid="stRadio"] label span,
-section[data-testid="stSidebar"] [data-testid="stRadio"] label div,
-section[data-testid="stSidebar"] [data-testid="stRadio"] label p {
-    color:#ffffff !important;
-    -webkit-text-fill-color:#ffffff !important;
-    opacity:1 !important;
-}
-section[data-testid="stSidebar"] [data-testid="stRadio"] label { border-radius:10px; padding:8px 10px; margin:3px 0; }
-section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover { background:rgba(255,255,255,.10); }
-
-/* ========================= SELECTBOX ========================= */
-/* Jangan pakai selector sidebar * agar tidak menimpa style BaseWeb selectbox. */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] {
-    width:100% !important;
-}
-
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] {
-    width:100% !important;
-    color:#fff !important;
-}
-
-/* kotak utama */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-    background:#173f6b !important;
-    border:1px solid #5f8fb9 !important;
-    border-radius:10px !important;
-    min-height:42px !important;
-    box-shadow:none !important;
-    color:#fff !important;
-}
-
-/* SEMUA elemen teks BaseWeb di dalam kotak */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] div,
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] span,
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] p {
-    color:#fff !important;
-    -webkit-text-fill-color:#fff !important;
-    opacity:1 !important;
-}
-
-/* class BaseWeb untuk nilai yang sedang terpilih */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] [class*="singleValue"],
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] [class*="SingleValue"],
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] [class*="valueContainer"] {
-    color:#fff !important;
-    -webkit-text-fill-color:#fff !important;
-    opacity:1 !important;
-}
-
-/* input internal */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] input {
-    color:#fff !important;
-    -webkit-text-fill-color:#fff !important;
-    caret-color:#fff !important;
-    opacity:1 !important;
-}
-
-/* placeholder */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] input::placeholder {
-    color:#dbeafe !important;
-    -webkit-text-fill-color:#dbeafe !important;
-    opacity:1 !important;
-}
-
-/* panah */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] svg {
-    color:#fff !important;
-    fill:#fff !important;
-    stroke:#fff !important;
-    opacity:1 !important;
-}
-
-/* focus */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within {
-    background:#173f6b !important;
-    border-color:#9ed0ff !important;
-    box-shadow:0 0 0 1px #9ed0ff !important;
-    outline:none !important;
-}
-
-/* dropdown */
-div[data-baseweb="popover"] { background:#173f6b !important; }
-div[data-baseweb="popover"] [role="option"] {
-    background:#173f6b !important;
-    color:#fff !important;
-}
-div[data-baseweb="popover"] [role="option"] * {
-    color:#fff !important;
-    -webkit-text-fill-color:#fff !important;
-}
-div[data-baseweb="popover"] [role="option"]:hover {
-    background:#2b6798 !important;
-}
-div[data-baseweb="popover"] [role="option"][aria-selected="true"] {
-    background:#2b6798 !important;
-    color:#fff !important;
-}
+div[data-baseweb="popover"] { background:#fff !important; border-radius:10px !important; box-shadow:0 8px 25px rgba(20,55,90,.18) !important; }
+div[data-baseweb="popover"] * { color:#173f6b !important; -webkit-text-fill-color:#173f6b !important; }
+div[data-baseweb="popover"] li { background:#fff !important; color:#173f6b !important; padding:9px 12px !important; }
+div[data-baseweb="popover"] li:hover { background:#eaf3ff !important; color:#104d7b !important; }
+div[data-baseweb="popover"] li[aria-selected="true"] { background:#dcecff !important; color:#0b4f8a !important; font-weight:600 !important; }
 
 /* ========================= KPI ========================= */
-div[data-testid="stMetric"] { background:#fff; border:1px solid #e1e9f2; border-radius:16px; padding:18px 20px; box-shadow:0 5px 18px rgba(25,61,96,.07); min-height:115px; }
+div[data-testid="stMetric"] { background:#fff; border:1px solid #e1e9f2; border-radius:16px; padding:18px 20px; box-shadow:0 5px 18px rgba(25,61,96,.07); min-height:115px; transition:.2s ease; }
+div[data-testid="stMetric"]:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(25,61,96,.11); }
 div[data-testid="stMetric"] label { color:#60758b !important; font-weight:600 !important; font-size:14px !important; }
 div[data-testid="stMetricValue"] { color:#123b69 !important; font-weight:750 !important; font-size:28px !important; }
+
+/* ========================= CHART / TABLE ========================= */
 div[data-testid="stPlotlyChart"] { background:#fff; border:1px solid #e1e9f2; border-radius:16px; padding:8px 8px 0; box-shadow:0 5px 18px rgba(25,61,96,.06); margin-bottom:15px; }
 div[data-testid="stDataFrame"] { border:1px solid #e1e9f2; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(25,61,96,.05); }
-.stButton > button,.stDownloadButton > button { border-radius:10px; border:1px solid #cddceb; background:#fff; color:#173f6b; font-weight:600; min-height:42px; }
-[data-testid="stFileUploader"] { background:#fff; border:1.5px dashed #8db4d8; border-radius:16px; padding:10px; }
+
+/* ========================= BUTTON / UPLOAD ========================= */
+.stButton > button,.stDownloadButton > button { border-radius:10px; border:1px solid #cddceb; background:#fff; color:#173f6b; font-weight:600; min-height:42px; transition:.2s ease; }
+.stButton > button:hover,.stDownloadButton > button:hover { border-color:#2c7fd3; color:#104d7b; box-shadow:0 4px 12px rgba(44,127,211,.15); }
+[data-testid="stFileUploader"] { background:#fff; border:1.5px dashed #8db4d8; border-radius:16px; padding:10px; box-shadow:0 5px 18px rgba(25,61,96,.05); }
 div[data-testid="stAlert"] { border-radius:12px; }
 div[data-testid="stExpander"] { background:#fff; border:1px solid #e1e9f2; border-radius:14px; }
 button[data-baseweb="tab"] { font-weight:600; color:#526b84 !important; }
 button[data-baseweb="tab"][aria-selected="true"] { color:#104d7b !important; }
 hr { border-color:#e1e8f0; }
+
+/* ========================= HEADER / FILTER ========================= */
 .dashboard-header { background:linear-gradient(135deg,#0b3b68 0%,#145c91 100%); border-radius:20px; padding:28px 32px; margin-bottom:25px; box-shadow:0 8px 25px rgba(15,63,105,.15); }
 .dashboard-header h1 { color:#fff !important; font-size:32px; margin-bottom:5px; }
 .dashboard-header p { color:#dcecff !important; font-size:15px; margin-bottom:0; }
@@ -230,6 +155,44 @@ def load_excel(file_bytes):
         )
 
     return sheets
+
+
+@st.cache_data(show_spinner=False)
+def process_uploaded_files(file_items):
+    """Baca dan cleaning beberapa file Excel, lalu gabungkan per jenis data."""
+    all_train, all_bim, all_rekap, all_rekap_bim = [], [], [], []
+
+    for file_name, file_bytes in file_items:
+        sheets = load_excel(file_bytes)
+
+        if TRAIN_SHEET in sheets:
+            df = clean_training(sheets[TRAIN_SHEET])
+            if not df.empty:
+                df["Sumber File"] = file_name
+                all_train.append(df)
+
+        if BIM_SHEET in sheets:
+            df = clean_bim(sheets[BIM_SHEET])
+            if not df.empty:
+                df["Sumber File"] = file_name
+                all_bim.append(df)
+
+        if REKAP_SHEET in sheets:
+            df = clean_rekap_realisasi(sheets[REKAP_SHEET])
+            if not df.empty:
+                df["Sumber File"] = file_name
+                all_rekap.append(df)
+
+        if REKAP_BIM_SHEET in sheets:
+            df = clean_rekap_bimkon(sheets[REKAP_BIM_SHEET])
+            if not df.empty:
+                df["Sumber File"] = file_name
+                all_rekap_bim.append(df)
+
+    def combine(items):
+        return pd.concat(items, ignore_index=True, sort=False) if items else pd.DataFrame()
+
+    return combine(all_train), combine(all_bim), combine(all_rekap), combine(all_rekap_bim)
 
 
 # =========================================================
@@ -2111,11 +2074,10 @@ def create_analysis_excel(
 # Halaman pembuka hanya ditampilkan sebelum file Excel dipilih.
 # Setelah file dipilih, aplikasi langsung masuk ke menu dashboard.
 
-if "excel_bytes" not in st.session_state:
-    st.session_state.excel_bytes = None
-    st.session_state.excel_name = ""
+if "excel_files" not in st.session_state:
+    st.session_state.excel_files = []
 
-if st.session_state.excel_bytes is None:
+if not st.session_state.excel_files:
     st.markdown("### MONITORING PROGRAM • 2026")
 
     hero_left, hero_right = st.columns([1.35, 0.65], gap="large", vertical_alignment="center")
@@ -2129,6 +2091,12 @@ if st.session_state.excel_bytes is None:
             "bahan evaluasi dan pengambilan keputusan."
         )
 
+    with hero_right:
+        with st.container(border=True):
+            st.markdown("#### 📊 Monitoring & Evaluasi")
+            st.markdown("**Pelatihan**  •  **Bimbingan**")
+            st.markdown("**Realisasi**  •  **Insight**")
+            st.caption("Data dianalisis langsung dari file Excel yang Anda unggah.")
 
     st.divider()
 
@@ -2159,95 +2127,48 @@ if st.session_state.excel_bytes is None:
 
     st.markdown("### Mulai Analisis Data")
     st.caption(
-        "Upload file Excel untuk membuka dashboard. Data akan dibersihkan dan "
-        "distandarkan secara otomatis."
+        "Upload satu atau beberapa file Excel. Data dari file-file yang dipilih "
+        "akan dibersihkan dan digabungkan secara otomatis."
     )
 
     upload_box = st.container(border=True)
     with upload_box:
         uploaded = st.file_uploader(
-            "Upload File Excel",
+            "Upload File Excel (bisa beberapa file)",
             type=["xlsx"],
-            help="Upload file Excel data produktivitas.",
+            accept_multiple_files=True,
+            help="Pilih satu atau beberapa file Excel data produktivitas.",
             key="excel_uploader"
         )
 
-    if uploaded is None:
-        st.info("Pilih file Excel untuk melanjutkan ke dashboard analisis.")
+    if not uploaded:
+        st.info("Pilih satu atau beberapa file Excel untuk melanjutkan ke dashboard analisis.")
         st.stop()
 
-    st.session_state.excel_bytes = uploaded.getvalue()
-    st.session_state.excel_name = uploaded.name
+    st.session_state.excel_files = [
+        (file.name, file.getvalue())
+        for file in uploaded
+    ]
+    st.session_state.excel_names = [file.name for file in uploaded]
     st.rerun()
 
 
 # File yang sudah dipilih disimpan di session agar halaman pembuka tidak
 # muncul lagi ketika pengguna berpindah menu.
-file_bytes = st.session_state.excel_bytes
+file_items = st.session_state.excel_files
 
 # =========================================================
 # PROSES DATA
 # =========================================================
 
 with st.spinner(
-    "⏳ Membaca dan membersihkan data..."
+    "⏳ Membaca dan membersihkan data dari semua file..."
 ):
-
-    sheets = load_excel(
-        file_bytes
-    )
-
-
-    train = (
-
-        clean_training(
-            sheets[TRAIN_SHEET]
-        )
-
-        if TRAIN_SHEET in sheets
-
-        else pd.DataFrame()
-    )
-
-
-    bim = (
-
-        clean_bim(
-            sheets[BIM_SHEET]
-        )
-
-        if BIM_SHEET in sheets
-
-        else pd.DataFrame()
-    )
-
-
-    rekap = (
-
-        clean_rekap_realisasi(
-            sheets[REKAP_SHEET]
-        )
-
-        if REKAP_SHEET in sheets
-
-        else pd.DataFrame()
-    )
-
-
-    rekap_bim = (
-
-        clean_rekap_bimkon(
-            sheets[REKAP_BIM_SHEET]
-        )
-
-        if REKAP_BIM_SHEET in sheets
-
-        else pd.DataFrame()
-    )
+    train, bim, rekap, rekap_bim = process_uploaded_files(file_items)
 
 
 st.success(
-    f"✅ Data berhasil diproses — "
+    f"✅ {format_number(len(file_items))} file berhasil diproses — "
     f"{format_number(len(train))} data pelatihan dan "
     f"{format_number(len(bim))} data bimbingan."
 )
@@ -3409,3 +3330,9 @@ else:
 # FOOTER
 # =========================================================
 
+st.divider()
+
+st.caption(
+    "📊 Dashboard Analisis Produktivitas 2026 • Data mengikuti file Excel yang diunggah "
+    "• Cleaning dan standardisasi dilakukan otomatis"
+)
