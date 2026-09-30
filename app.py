@@ -688,31 +688,36 @@ def load_excel(file_items):
 # =========================================================
 
 def make_unique(cols):
-
-    seen = {}
+    """Buat nama kolom yang benar-benar unik, termasuk jika sumber
+    sudah memiliki nama seperti A, A_2, A, atau kolom kosong.
+    """
+    used = set()
+    counters = {}
     output = []
 
     for col in cols:
-
-        col = (
-            str(col).strip()
-            if pd.notna(col)
-            else "Kolom"
-        )
-
-        seen[col] = (
-            seen.get(col, 0) + 1
-        )
-
-        if seen[col] == 1:
-
-            output.append(col)
-
+        if pd.isna(col):
+            base = "Kolom"
         else:
+            base = str(col).strip()
+            if not base or base.lower() in {"nan", "none"}:
+                base = "Kolom"
 
-            output.append(
-                f"{col}_{seen[col]}"
-            )
+        # Pertahankan nama asli bila belum dipakai.
+        if base not in used:
+            candidate = base
+            counters.setdefault(base, 1)
+        else:
+            # Cari suffix berikutnya yang juga belum dipakai.
+            n = counters.get(base, 1) + 1
+            candidate = f"{base}_{n}"
+            while candidate in used:
+                n += 1
+                candidate = f"{base}_{n}"
+            counters[base] = n
+
+        used.add(candidate)
+        output.append(candidate)
 
     return output
 
