@@ -565,31 +565,150 @@ MONTHS = [
 # BACA EXCEL
 # =========================================================
 
+def _canonical_header_name(value):
+    """Samakan variasi nama kolom antar file Excel."""
+    if pd.isna(value):
+        return "Kolom"
+    raw = str(value).strip()
+    key = re.sub(r"[^a-z0-9]", "", raw.lower())
+
+    aliases = {
+        "namapeserta": "Nama Peserta",
+        "statuskelulusan": "Status KeLulusan",
+        "statuskelulusanpeserta": "Status KeLulusan",
+        "statuslulus": "Status KeLulusan",
+        "namalembaga": "Nama Lembaga",
+        "judulprogrampelatihan": "Judul Program Pelatihan",
+        "tanggalmulaipelatihan": "Tanggal Mulai Pelatihan",
+        "tanggalselesaipelatihan": "Tanggal Selesai Pelatihan",
+        "metodepelatihan": "Metode Pelatihan",
+        "jenispelatihan": "Jenis Pelatihan",
+        "statusselesaipelatihan": "Status Selesai Pelatihan",
+        "kejuruan": "Kejuruan",
+        "provinsi": "Provinsi",
+        "kabkota": "Kab./Kota",
+        "kabupatenkota": "Kab./Kota",
+        "lembagainstansi": "Lembaga/Instansi",
+        "targetpesertapelatihanp3": "Target Pelatihan P3",
+        "targetperusahaan": "Target Perusahaan",
+        "realisasi": "Realisasi",
+        "namaperusahaan": "NAMA PERUSAHAAN",
+        "bidangusaha": "BIDANG USAHA",
+        "namakabupatenkota": "NAMA KABUPATEN/KOTA",
+    }
+    return aliases.get(key, raw)
+
+
+def _coalesce_duplicate_columns(df):
+    """Gabungkan kolom yang memiliki nama sama dengan mengambil nilai non-kosong pertama."""
+    if df.empty:
+        return df
+    result = pd.DataFrame(index=df.index)
+    for name in dict.fromkeys(df.columns):
+        cols = [c for c in df.columns if c == name]
+        if len(cols) == 1:
+            result[name] = df[cols[0]]
+        else:
+            block = df.loc[:, cols]
+            result[name] = block.bfill(axis=1).iloc[:, 0]
+    result.columns = make_unique(result.columns)
+    return result
+
+
+def _prepare_multi_file_sheet(raw, sheet):
+    """Menyiapkan sheet per file berdasarkan nama header, bukan posisi kolom."""
+    if raw is None or raw.empty:
+        return pd.DataFrame()
+
+    header = None
+    for i, row in raw.iterrows():
+        vals = [str(v).strip().upper() for v in row.tolist() if pd.notna(v)]
+        joined = " | ".join(vals)
+        if sheet == TRAIN_SHEET:
+            if "NAMA PESERTA" in vals and any("STATUS" in v and "LULUS" in v for v in vals):
+                header = i
+                break
+        elif sheet == BIM_SHEET:
+            if "NAMA PERUSAHAAN" in vals:
+                header = i
+                break
+        elif sheet in [REKAP_SHEET, REKAP_BIM_SHEET]:
+            if "LEMBAGA/INSTANSI" in joined and "REALISASI" in joined:
+                header = i
+                break
+
+    if header is None:
+        return raw.copy()
+
+    columns = [_canonical_header_name(v) for v in raw.iloc[header].tolist()]
+    data = raw.iloc[header + 1:].copy()
+    data.columns = columns
+    data = data.dropna(how="all")
+    data = _coalesce_duplicate_columns(data)
+
+    if sheet == TRAIN_SHEET and "Nama Peserta" in data.columns:
+        data = data[data["Nama Peserta"].astype(str).str.strip().str.upper() != "NAMA PESERTA"]
+    if sheet == BIM_SHEET and "NAMA PERUSAHAAN" in data.columns:
+        data = data[data["NAMA PERUSAHAAN"].astype(str).str.strip().str.upper() != "NAMA PERUSAHAAN"]
+
+    # Header + data agar fungsi cleaning yang sudah ada tetap kompatibel.
+    header_row = pd.DataFrame([list(data.columns)], columns=data.columns)
+    return pd.concat([header_row, data], ignore_index=True)
+
+
 @st.cache_data(show_spinner=False)
 def load_excel(file_items):
-    """Membaca satu atau beberapa file Excel dan menggabungkan sheet yang sama."""
+    """Membaca beberapa file Excel dan menggabungkan data berdasarkan nama kolom."""
     sheets = {}
 
     for file_name, file_bytes in file_items:
-        xls = pd.ExcelFile(
-            BytesIO(file_bytes),
-            engine="openpyxl"
-        )
+        xls = pd.ExcelFile(BytesIO(file_bytes), engine="openpyxl")
 
         for sheet in xls.sheet_names:
-            df = pd.read_excel(
-                xls,
-                sheet_name=sheet,
-                header=None
-            )
+            raw = pd.read_excel(xls, sheet_name=sheet, header=None)
+            prepared = _prepare_multi_file_sheet(raw, sheet)
 
-            if sheet in sheets:
+            if sheet not in sheets or sheets[sheet].empty:
+                sheets[sheet] = prepared
+                continue
+
+            # Gabungkan berdasarkan nama kolom yang sudah dinormalisasi.
+            base = sheets[sheet]
+            if sheet in [TRAIN_SHEET, BIM_SHEET]:
+                base_header = [_canonical_header_name(v) for v in base.iloc[0].tolist()]
+                base_data = base.iloc[1:].copy()
+                base_data.columns = base_header
+                base_data = _coalesce_duplicate_columns(base_data)
+
+                new_header = [_canonical_header_name(v) for v in prepared.iloc[0].tolist()]
+                new_data = prepared.iloc[1:].copy()
+                new_data.columns = new_header
+                new_data = _coalesce_duplicate_columns(new_data)
+
+                all_columns = list(dict.fromkeys(list(base_data.columns) + list(new_data.columns)))
+                base_data = base_data.reindex(columns=all_columns)
+                new_data = new_data.reindex(columns=all_columns)
+                combined = pd.concat([base_data, new_data], ignore_index=True, sort=False)
                 sheets[sheet] = pd.concat(
-                    [sheets[sheet], df],
+                    [pd.DataFrame([list(combined.columns)], columns=combined.columns), combined],
                     ignore_index=True
                 )
             else:
-                sheets[sheet] = df
+                # Rekap tetap mengikuti struktur sumber, tetapi cegah duplicate columns.
+                base_header = [_canonical_header_name(v) for v in base.iloc[0].tolist()]
+                base_data = base.iloc[1:].copy()
+                base_data.columns = base_header
+                new_header = [_canonical_header_name(v) for v in prepared.iloc[0].tolist()]
+                new_data = prepared.iloc[1:].copy()
+                new_data.columns = new_header
+                all_columns = list(dict.fromkeys(list(base_data.columns) + list(new_data.columns)))
+                base_data = base_data.reindex(columns=all_columns)
+                new_data = new_data.reindex(columns=all_columns)
+                combined = pd.concat([base_data, new_data], ignore_index=True, sort=False)
+                sheets[sheet] = pd.concat(
+                    [pd.DataFrame([list(combined.columns)], columns=combined.columns), combined],
+                    ignore_index=True
+                )
 
     return sheets
 
@@ -599,31 +718,36 @@ def load_excel(file_items):
 # =========================================================
 
 def make_unique(cols):
-
-    seen = {}
+    """Buat nama kolom yang benar-benar unik, termasuk jika sumber
+    sudah memiliki nama seperti A, A_2, A, atau kolom kosong.
+    """
+    used = set()
+    counters = {}
     output = []
 
     for col in cols:
-
-        col = (
-            str(col).strip()
-            if pd.notna(col)
-            else "Kolom"
-        )
-
-        seen[col] = (
-            seen.get(col, 0) + 1
-        )
-
-        if seen[col] == 1:
-
-            output.append(col)
-
+        if pd.isna(col):
+            base = "Kolom"
         else:
+            base = str(col).strip()
+            if not base or base.lower() in {"nan", "none"}:
+                base = "Kolom"
 
-            output.append(
-                f"{col}_{seen[col]}"
-            )
+        # Pertahankan nama asli bila belum dipakai.
+        if base not in used:
+            candidate = base
+            counters.setdefault(base, 1)
+        else:
+            # Cari suffix berikutnya yang juga belum dipakai.
+            n = counters.get(base, 1) + 1
+            candidate = f"{base}_{n}"
+            while candidate in used:
+                n += 1
+                candidate = f"{base}_{n}"
+            counters[base] = n
+
+        used.add(candidate)
+        output.append(candidate)
 
     return output
 
@@ -748,18 +872,19 @@ def standardisasi_status_lulus(value):
         return "Tidak Diisi"
 
     text = str(value).strip().lower()
+    text = re.sub(r"\s+", " ", text)
 
-    if text in [
-        "lulus",
-        "100"
-    ]:
+    # Variasi penulisan yang umum muncul antar file Excel.
+    if text in {"lulus", "lulus.", "100", "1", "ya", "yes", "passed", "kompeten"}:
         return "Lulus"
 
-    if text in [
-        "tidak lulus",
-        "0"
-    ]:
+    if text in {"tidak lulus", "tidak lulus.", "0", "tidak", "no", "not passed", "tidak kompeten"}:
         return "Tidak Lulus"
+
+    if "tidak lulus" in text or "tidak kompeten" in text:
+        return "Tidak Lulus"
+    if text.startswith("lulus") or "kompeten" == text:
+        return "Lulus"
 
     return str(value).strip().title()
 
@@ -1109,11 +1234,15 @@ def clean_training(raw):
 
     df = raw.copy()
 
-    df.columns = make_unique(
-        df.iloc[0]
-    )
-
+    # Normalisasi nama header agar multi-file tidak membuat Status KeLulusan
+    # terpecah menjadi kolom berbeda karena variasi kapitalisasi/ejaan.
+    normalized_headers = [
+        _canonical_header_name(v)
+        for v in df.iloc[0].tolist()
+    ]
     df = df.iloc[1:].copy()
+    df.columns = normalized_headers
+    df = _coalesce_duplicate_columns(df)
 
     df = df.dropna(
         how="all"
