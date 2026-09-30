@@ -655,8 +655,28 @@ def load_excel(file_items):
                 new_data = prepared.iloc[1:].copy()
                 new_data.columns = new_header
 
-                combined = pd.concat([base_data, new_data], ignore_index=True, sort=False)
-                sheets[sheet] = pd.concat([pd.DataFrame([combined.columns]), combined], ignore_index=True)
+                # Pastikan setiap DataFrame memiliki nama kolom yang benar-benar unik.
+                # Ini mencegah InvalidIndexError pada pandas saat beberapa file
+                # memiliki header ganda/kolom kosong dengan nama yang sama.
+                base_data = base_data.loc[:, ~base_data.columns.duplicated(keep="first")].copy()
+                new_data = new_data.loc[:, ~new_data.columns.duplicated(keep="first")].copy()
+
+                all_columns = list(dict.fromkeys(
+                    list(base_data.columns) + list(new_data.columns)
+                ))
+                base_data = base_data.reindex(columns=all_columns)
+                new_data = new_data.reindex(columns=all_columns)
+
+                combined = pd.concat(
+                    [base_data, new_data],
+                    ignore_index=True,
+                    sort=False
+                )
+                combined.columns = make_unique(combined.columns)
+                sheets[sheet] = pd.concat(
+                    [pd.DataFrame([list(combined.columns)]), combined],
+                    ignore_index=True
+                )
             else:
                 sheets[sheet] = pd.concat([sheets[sheet], prepared.iloc[1:]], ignore_index=True)
 
