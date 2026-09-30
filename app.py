@@ -1996,10 +1996,7 @@ def create_dashboard_pdf(training_df=None, bim_df=None, rekap_df=None, rekap_bim
         story.append(table)
 
     if rekap_bim_df is not None and not rekap_bim_df.empty:
-        # Untuk PDF Bimbingan Konsultasi, tampilkan hanya ringkasan status.
-        # Rekap detail per lembaga sengaja tidak dimasukkan karena tampilannya
-        # seperti spreadsheet/Excel dan dapat memaksa ReportLab memindahkan
-        # tabel besar ke halaman berikutnya sehingga halaman sebelumnya kosong.
+        # Status realisasi Bimbingan dibuat konsisten dengan Pelatihan Produktivitas.
         story.append(Paragraph("🏢 Status Realisasi Bimbingan Konsultasi", styles["PdfHead"]))
         sudah = rekap_bim_df[rekap_bim_df["Status Realisasi"] == "Sudah Terealisasi"]
         belum = rekap_bim_df[rekap_bim_df["Status Realisasi"] == "Belum Terealisasi"]
@@ -2009,6 +2006,26 @@ def create_dashboard_pdf(training_df=None, bim_df=None, rekap_df=None, rekap_bim
             ("Belum Terealisasi", format_number(len(belum))),
             ("Persentase Terealisasi", f"{pct_sudah:.1f}%")
         ])
+
+        table_data = [["Lembaga/Instansi", "Target", "Realisasi", "Status"]]
+        for _, row in rekap_bim_df.sort_values(["Status Realisasi", "Lembaga/Instansi"]).iterrows():
+            table_data.append([
+                _pdf_text(row.get("Lembaga/Instansi", "")),
+                format_number(row.get("Target Perusahaan", 0)),
+                format_number(row.get("Realisasi Bimbingan", 0)),
+                _pdf_text(row.get("Status Realisasi", ""))
+            ])
+        table = Table(table_data, colWidths=[8.0*cm, 2.0*cm, 2.0*cm, 4.0*cm], repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#EAF2F8")),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.HexColor("#17365D")),
+            ("GRID", (0,0), (-1,-1), 0.4, colors.lightgrey),
+            ("FONTSIZE", (0,0), (-1,-1), 7.5),
+            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+            ("TOPPADDING", (0,0), (-1,-1), 5),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ]))
+        story.append(table)
 
     if bim_df is not None and not bim_df.empty:
         if training_df is not None and not training_df.empty:
