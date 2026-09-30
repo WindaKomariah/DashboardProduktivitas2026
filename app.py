@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 from io import BytesIO
 import re
+import html
 import matplotlib.pyplot as plt
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -32,79 +33,432 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-/* ========================= GLOBAL ========================= */
-[data-testid="stAppViewContainer"] { background: #f5f7fb; }
-[data-testid="stHeader"] { background: rgba(255,255,255,.96); border-bottom: 1px solid #e6ebf2; }
-.block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1500px; }
-h1,h2,h3 { color:#123b69 !important; letter-spacing:-.02em; }
-p,li { color:#334e68; }
-[data-testid="stCaptionContainer"] { color:#6b7c93 !important; }
+/* =========================================================
+   PREMIUM DASHBOARD — LIGHT / GLASS / MODERN
+   Terinspirasi dari referensi yang diberikan:
+   pastel blue, soft glass cards, rounded corners, clean spacing.
+   ========================================================= */
+
+:root {
+    --navy: #12324a;
+    --teal: #0b8f91;
+    --teal-dark: #066d73;
+    --blue: #237fc5;
+    --sky: #dff1f7;
+    --ink: #19354a;
+    --muted: #60788b;
+    --line: #c7dce5;
+    --card: rgba(255,255,255,.94);
+    --shadow: 0 14px 35px rgba(38, 78, 103, .10);
+}
+
+/* ========================= APP CANVAS ========================= */
+[data-testid="stAppViewContainer"] {
+    background:
+        radial-gradient(circle at 88% 4%, rgba(35, 127, 197, .26), transparent 28%),
+        radial-gradient(circle at 4% 78%, rgba(11, 143, 145, .18), transparent 24%),
+        linear-gradient(135deg, #e3f3f7 0%, #f0f5f8 48%, #e5f0fa 100%);
+}
+
+[data-testid="stHeader"] {
+    background: rgba(255,255,255,.55);
+    border-bottom: 1px solid rgba(210,226,235,.65);
+    backdrop-filter: blur(14px);
+}
+
+.block-container {
+    padding-top: 1.1rem;
+    padding-bottom: 2.8rem;
+    max-width: 1480px;
+}
+
+/* Hide Streamlit's extra chrome where possible */
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+
+/* ========================= TYPOGRAPHY ========================= */
+h1, h2, h3, h4 {
+    color: var(--navy) !important;
+    letter-spacing: -.025em;
+}
+p, li {
+    color: #4d6578;
+}
+[data-testid="stCaptionContainer"] {
+    color: var(--muted) !important;
+}
 
 /* ========================= SIDEBAR ========================= */
-section[data-testid="stSidebar"] { background:linear-gradient(180deg,#0b2f5b 0%,#104b82 55%,#0d4275 100%); }
-section[data-testid="stSidebar"] > div { background:transparent; }
-section[data-testid="stSidebar"] * { color:#f5f9ff; }
-section[data-testid="stSidebar"] hr { border-color:rgba(255,255,255,.18); }
-section[data-testid="stSidebar"] [data-testid="stRadio"] label { border-radius:10px; padding:8px 10px; margin:3px 0; transition:.2s ease; }
-section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover { background:rgba(255,255,255,.10); }
-section[data-testid="stSidebar"] label { color:#fff !important; font-weight:600 !important; }
-
-/* ========================= SELECTBOX FIX ========================= */
-section[data-testid="stSidebar"] div[data-baseweb="select"] { width:100% !important; }
-section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-    background:#fff !important; border:1px solid #c9d7e6 !important; border-radius:10px !important;
-    min-height:42px !important; box-shadow:0 2px 6px rgba(0,0,0,.08) !important;
+section[data-testid="stSidebar"] {
+    background:
+        linear-gradient(180deg, #f7fbfc 0%, #d9ecef 100%);
+    border-right: 1px solid #d7e7eb;
+    box-shadow: 8px 0 28px rgba(44, 87, 109, .06);
 }
-section[data-testid="stSidebar"] div[data-baseweb="select"] * {
-    color:#173f6b !important; -webkit-text-fill-color:#173f6b !important; opacity:1 !important;
+
+section[data-testid="stSidebar"] > div {
+    background: transparent;
 }
-section[data-testid="stSidebar"] div[data-baseweb="select"] [class*="singleValue"],
-section[data-testid="stSidebar"] div[data-baseweb="select"] [class*="SingleValue"] {
-    color:#173f6b !important; -webkit-text-fill-color:#173f6b !important; font-weight:600 !important; opacity:1 !important;
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3,
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    opacity: 1 !important;
 }
-section[data-testid="stSidebar"] div[data-baseweb="select"] input {
-    color:#173f6b !important; -webkit-text-fill-color:#173f6b !important; opacity:1 !important; caret-color:#173f6b !important;
+
+section[data-testid="stSidebar"] [data-testid="stRadio"] > label {
+    color: #7890a1 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 7px;
 }
-section[data-testid="stSidebar"] div[data-baseweb="select"] input::placeholder {
-    color:#7b8da3 !important; -webkit-text-fill-color:#7b8da3 !important; opacity:1 !important;
+
+section[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] {
+    gap: 5px;
 }
-section[data-testid="stSidebar"] div[data-baseweb="select"] svg { color:#315b83 !important; fill:#315b83 !important; }
 
-div[data-baseweb="popover"] { background:#fff !important; border-radius:10px !important; box-shadow:0 8px 25px rgba(20,55,90,.18) !important; }
-div[data-baseweb="popover"] * { color:#173f6b !important; -webkit-text-fill-color:#173f6b !important; }
-div[data-baseweb="popover"] li { background:#fff !important; color:#173f6b !important; padding:9px 12px !important; }
-div[data-baseweb="popover"] li:hover { background:#eaf3ff !important; color:#104d7b !important; }
-div[data-baseweb="popover"] li[aria-selected="true"] { background:#dcecff !important; color:#0b4f8a !important; font-weight:600 !important; }
+section[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    border-radius: 12px;
+    padding: 8px 10px !important;
+    margin: 2px 0 !important;
+    transition: .18s ease;
+}
 
-/* ========================= KPI ========================= */
-div[data-testid="stMetric"] { background:#fff; border:1px solid #e1e9f2; border-radius:16px; padding:18px 20px; box-shadow:0 5px 18px rgba(25,61,96,.07); min-height:115px; transition:.2s ease; }
-div[data-testid="stMetric"]:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(25,61,96,.11); }
-div[data-testid="stMetric"] label { color:#60758b !important; font-weight:600 !important; font-size:14px !important; }
-div[data-testid="stMetricValue"] { color:#123b69 !important; font-weight:750 !important; font-size:28px !important; }
+section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+    background: #d7eeee;
+}
 
-/* ========================= CHART / TABLE ========================= */
-div[data-testid="stPlotlyChart"] { background:#fff; border:1px solid #e1e9f2; border-radius:16px; padding:8px 8px 0; box-shadow:0 5px 18px rgba(25,61,96,.06); margin-bottom:15px; }
-div[data-testid="stDataFrame"] { border:1px solid #e1e9f2; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(25,61,96,.05); }
+section[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
+section[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+    background: linear-gradient(135deg, #087d82, #0fa6a6);
+    box-shadow: 0 7px 16px rgba(21, 156, 156, .22);
+}
 
-/* ========================= BUTTON / UPLOAD ========================= */
-.stButton > button,.stDownloadButton > button { border-radius:10px; border:1px solid #cddceb; background:#fff; color:#173f6b; font-weight:600; min-height:42px; transition:.2s ease; }
-.stButton > button:hover,.stDownloadButton > button:hover { border-color:#2c7fd3; color:#104d7b; box-shadow:0 4px 12px rgba(44,127,211,.15); }
-[data-testid="stFileUploader"] { background:#fff; border:1.5px dashed #8db4d8; border-radius:16px; padding:10px; box-shadow:0 5px 18px rgba(25,61,96,.05); }
-div[data-testid="stAlert"] { border-radius:12px; }
-div[data-testid="stExpander"] { background:#fff; border:1px solid #e1e9f2; border-radius:14px; }
-button[data-baseweb="tab"] { font-weight:600; color:#526b84 !important; }
-button[data-baseweb="tab"][aria-selected="true"] { color:#104d7b !important; }
-hr { border-color:#e1e8f0; }
+section[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"] *,
+section[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) * {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
 
-/* ========================= HEADER / FILTER ========================= */
-.dashboard-header { background:linear-gradient(135deg,#0b3b68 0%,#145c91 100%); border-radius:20px; padding:28px 32px; margin-bottom:25px; box-shadow:0 8px 25px rgba(15,63,105,.15); }
-.dashboard-header h1 { color:#fff !important; font-size:32px; margin-bottom:5px; }
-.dashboard-header p { color:#dcecff !important; font-size:15px; margin-bottom:0; }
-.filter-title { color:#fff; font-size:16px; font-weight:700; margin-top:10px; margin-bottom:12px; }
-.filter-info { background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:10px 12px; margin-bottom:14px; font-size:13px; color:#eaf3ff !important; }
-.section-title { color:#123b69; font-size:21px; font-weight:700; margin-top:20px; margin-bottom:12px; }
+section[data-testid="stSidebar"] hr {
+    border-color: #dce9ed !important;
+}
+
+.sidebar-brand {
+    padding: 8px 3px 18px;
+}
+.sidebar-brand .brand-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg,#087d82,#237fc5);
+    color: #fff;
+    font-size: 20px;
+    box-shadow: 0 8px 20px rgba(21,156,156,.20);
+    margin-bottom: 9px;
+}
+.sidebar-brand .brand-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.1;
+}
+.sidebar-brand .brand-sub {
+    font-size: 11px;
+    color: #8297a7;
+    margin-top: 4px;
+}
+
+.sidebar-file {
+    background: rgba(255,255,255,.75);
+    border: 1px solid #d8e8ed;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin: 8px 0 14px;
+    font-size: 11px;
+    color: #5f7485;
+}
+.sidebar-file strong { color: #193b52; }
+
+/* ========================= SELECTBOX ========================= */
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] {
+    width: 100% !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] {
+    width: 100% !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+    background: rgba(255,255,255,.82) !important;
+    border: 1px solid #cfe1e7 !important;
+    border-radius: 11px !important;
+    min-height: 40px !important;
+    box-shadow: none !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] div,
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] span,
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] p {
+    color: #34546a !important;
+    -webkit-text-fill-color: #34546a !important;
+    opacity: 1 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] svg {
+    color: #159c9c !important;
+    fill: #159c9c !important;
+}
+
+/* ========================= HERO ========================= */
+.dashboard-hero {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 94% 20%, rgba(255,255,255,.58), transparent 20%),
+        linear-gradient(135deg, #bfe7e6 0%, #d2ebf3 48%, #dfe7f7 100%);
+    border: 1px solid rgba(188, 216, 225, .85);
+    border-radius: 24px;
+    padding: 28px 32px;
+    margin-bottom: 22px;
+    box-shadow: 0 18px 42px rgba(52, 92, 113, .10);
+}
+.dashboard-hero:after {
+    content: "";
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    right: -65px;
+    top: -75px;
+    background: rgba(54, 169, 206, .10);
+}
+.dashboard-hero .eyebrow {
+    display: inline-block;
+    background: rgba(255,255,255,.84);
+    border: 1px solid rgba(190,218,226,.8);
+    color: #087d82;
+    border-radius: 999px;
+    padding: 6px 11px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+    margin-bottom: 9px;
+}
+.dashboard-hero h1 {
+    color: #17324d !important;
+    font-size: 31px;
+    line-height: 1.05;
+    margin: 0 0 8px;
+}
+.dashboard-hero p {
+    max-width: 760px;
+    color: #587183 !important;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ========================= SECTION LABEL ========================= */
+.section-title {
+    color: #17324d;
+    font-size: 20px;
+    font-weight: 800;
+    margin: 26px 0 12px;
+}
+.section-subtitle {
+    color: #8193a2;
+    font-size: 12px;
+    margin: -6px 0 14px;
+}
+
+/* ========================= KPI CARDS ========================= */
+div[data-testid="stMetric"] {
+    background: rgba(255,255,255,.96);
+    border: 1px solid #d9e8ee;
+    border-radius: 18px;
+    padding: 17px 19px;
+    min-height: 112px;
+    box-shadow: var(--shadow);
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+div[data-testid="stMetric"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 36px rgba(38,78,103,.13);
+}
+div[data-testid="stMetric"] label {
+    color: #5f7587 !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+}
+div[data-testid="stMetricValue"] {
+    color: #17324d !important;
+    font-weight: 800 !important;
+    font-size: 27px !important;
+}
+
+/* ========================= CARDS / CHARTS / TABLES ========================= */
+div[data-testid="stPlotlyChart"] {
+    background: rgba(255,255,255,.96);
+    border: 1px solid #d9e8ee;
+    border-radius: 18px;
+    padding: 7px 7px 0;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+}
+div[data-testid="stDataFrame"] {
+    border: 1px solid #d9e8ee;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(38,78,103,.07);
+}
+div[data-testid="stExpander"] {
+    background: rgba(255,255,255,.94);
+    border: 1px solid #d9e8ee;
+    border-radius: 16px;
+}
+div[data-testid="stAlert"] {
+    border-radius: 14px;
+    border: 1px solid #d8e7ed;
+}
+
+/* insight cards */
+.insight-card {
+    background: rgba(255,255,255,.92);
+    border: 1px solid #d9e8ee;
+    border-left: 4px solid #159c9c;
+    border-radius: 14px;
+    padding: 12px 15px;
+    margin: 7px 0;
+    box-shadow: 0 8px 20px rgba(38,78,103,.055);
+    color: #405b6d;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* status */
+.status-card {
+    background: rgba(255,255,255,.94);
+    border: 1px solid #d9e8ee;
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 10px 28px rgba(38,78,103,.07);
+}
+.status-pill {
+    display:inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing:.04em;
+}
+.status-ok { background:#e2f7ef; color:#148463; }
+.status-wait { background:#fff2d9; color:#b6760a; }
+
+/* ========================= BUTTONS / UPLOAD ========================= */
+.stButton > button,
+.stDownloadButton > button {
+    border-radius: 11px;
+    border: 1px solid #cfe1e7;
+    background: rgba(255,255,255,.96);
+    color: #15566e;
+    font-weight: 700;
+    min-height: 41px;
+    transition: .18s ease;
+}
+.stButton > button:hover,
+.stDownloadButton > button:hover {
+    border-color: #74bfc2;
+    color: #087d82;
+    box-shadow: 0 7px 18px rgba(21,156,156,.12);
+}
+[data-testid="stFileUploader"] {
+    background: rgba(255,255,255,.78);
+    border: 1.5px dashed #87bfc7;
+    border-radius: 17px;
+    padding: 10px;
+}
+button[data-baseweb="tab"] {
+    font-weight: 700;
+    color: #6e8291 !important;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #0f8e91 !important;
+}
+hr { border-color: #dce8ed; }
+
+/* ========================= EMPTY / INFO ========================= */
+.data-note {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 13px;
+    border-radius:12px;
+    background:rgba(255,255,255,.62);
+    border:1px solid #dce8ed;
+    color:#6d8190;
+    font-size:12px;
+}
 </style>
 """, unsafe_allow_html=True)
+
+
+def page_hero(eyebrow, title, subtitle, show_decorative=False):
+    """Hero section yang konsisten dengan desain dashboard.
+
+    Decorative summary cards hanya ditampilkan pada Overview agar halaman
+    Pelatihan, Bimbingan, dan Data Detail tetap fokus dan tidak repetitif.
+    """
+    st.markdown(
+        f"""
+        <div class="dashboard-hero">
+            <div class="eyebrow">{eyebrow}</div>
+            <h1>{title}</h1>
+            <p>{subtitle}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    if show_decorative:
+        st.markdown(
+            """
+            <div style="display:flex; gap:12px; margin:0 0 20px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:220px; background:linear-gradient(135deg,#b8891f,#d4a843); border-radius:14px; padding:15px 18px; color:#fff; box-shadow:0 7px 18px rgba(184,137,31,.28);">
+                    <div style="font-size:10px; font-weight:700; letter-spacing:.08em; opacity:.92; margin-bottom:5px;">📊 DATA TERSEDIA</div>
+                    <div style="font-size:19px; font-weight:800; line-height:1.2;">Dashboard Aktif</div>
+                    <div style="font-size:11px; opacity:.88; margin-top:3px;">Data siap untuk monitoring dan analisis</div>
+                </div>
+                <div style="flex:1; min-width:220px; background:linear-gradient(135deg,#159c9c,#48b5d9); border-radius:14px; padding:15px 18px; color:#fff; box-shadow:0 7px 18px rgba(6,117,122,.26);">
+                    <div style="font-size:10px; font-weight:700; letter-spacing:.08em; opacity:.92; margin-bottom:5px;">📅 PERIODE</div>
+                    <div style="font-size:19px; font-weight:800; line-height:1.2;">2026</div>
+                    <div style="font-size:11px; opacity:.88; margin-top:3px;">Monitoring program tahun berjalan</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+def section_heading(title, subtitle=None):
+    html = f'<div class="section-title">{title}</div>'
+    if subtitle:
+        html += f'<div class="section-subtitle">{subtitle}</div>'
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def insight_card(text):
+    st.markdown(
+        f'<div class="insight-card">{text.replace("**", "")}</div>',
+        unsafe_allow_html=True
+    )
 
 
 # =========================================================
@@ -155,44 +509,6 @@ def load_excel(file_bytes):
         )
 
     return sheets
-
-
-@st.cache_data(show_spinner=False)
-def process_uploaded_files(file_items):
-    """Baca dan cleaning beberapa file Excel, lalu gabungkan per jenis data."""
-    all_train, all_bim, all_rekap, all_rekap_bim = [], [], [], []
-
-    for file_name, file_bytes in file_items:
-        sheets = load_excel(file_bytes)
-
-        if TRAIN_SHEET in sheets:
-            df = clean_training(sheets[TRAIN_SHEET])
-            if not df.empty:
-                df["Sumber File"] = file_name
-                all_train.append(df)
-
-        if BIM_SHEET in sheets:
-            df = clean_bim(sheets[BIM_SHEET])
-            if not df.empty:
-                df["Sumber File"] = file_name
-                all_bim.append(df)
-
-        if REKAP_SHEET in sheets:
-            df = clean_rekap_realisasi(sheets[REKAP_SHEET])
-            if not df.empty:
-                df["Sumber File"] = file_name
-                all_rekap.append(df)
-
-        if REKAP_BIM_SHEET in sheets:
-            df = clean_rekap_bimkon(sheets[REKAP_BIM_SHEET])
-            if not df.empty:
-                df["Sumber File"] = file_name
-                all_rekap_bim.append(df)
-
-    def combine(items):
-        return pd.concat(items, ignore_index=True, sort=False) if items else pd.DataFrame()
-
-    return combine(all_train), combine(all_bim), combine(all_rekap), combine(all_rekap_bim)
 
 
 # =========================================================
@@ -1168,55 +1484,99 @@ def monthly_data(
 
 def style_chart(
     fig,
-    height=370
+    height=330,
+    horizontal=False,
+    show_legend=False
 ):
-
+    """Style Plotly yang konsisten: clean, lega, dan aman untuk label."""
     fig.update_layout(
-
         height=height,
-
         margin=dict(
-            l=25,
-            r=25,
-            t=60,
-            b=35
+            l=120 if horizontal else 18,
+            r=52,
+            t=54,
+            b=58
         ),
-
-        paper_bgcolor="white",
-
-        plot_bgcolor="white",
-
-        font=dict(
-            family="Arial",
-            color="#17324d"
+        paper_bgcolor="rgba(255,255,255,0)",
+        plot_bgcolor="rgba(255,255,255,0)",
+        font=dict(family="Arial", size=11, color="#17324d"),
+        title=dict(
+            x=0.02, xanchor="left",
+            font=dict(size=14, color="#17324d")
         ),
-
-        title_font=dict(
-            size=18,
-            color="#104d7b"
-        ),
-
         legend=dict(
             orientation="h",
-            y=1.08,
-            x=0
-        )
+            yanchor="bottom", y=1.01,
+            x=0.02, xanchor="left",
+            font=dict(size=10),
+            bgcolor="rgba(255,255,255,0)"
+        ),
+        hoverlabel=dict(
+            bgcolor="white", font_size=12, font_family="Arial",
+            bordercolor="#d9e8ee"
+        ),
+        bargap=0.34,
+        uniformtext_minsize=9,
+        uniformtext_mode="hide"
     )
-
 
     fig.update_xaxes(
-        showgrid=True,
-        gridcolor="#e6eef5",
-        zeroline=False
+        showgrid=True, gridcolor="#e8eef4", zeroline=False, showline=False,
+        tickfont=dict(size=10, color="#71859a"),
+        title_font=dict(size=10, color="#71859a"),
+        automargin=True
+    )
+    fig.update_yaxes(
+        showgrid=True, gridcolor="#e8eef4", zeroline=False, showline=False,
+        tickfont=dict(size=10, color="#71859a"),
+        title_font=dict(size=10, color="#71859a"),
+        automargin=True
     )
 
-    fig.update_yaxes(
-        showgrid=True,
-        gridcolor="#e6eef5",
-        zeroline=False
-    )
+    if not show_legend:
+        fig.update_layout(showlegend=False)
 
     return fig
+
+def clean_chart_text(values):
+    """Tampilkan label hanya untuk nilai yang terisi agar grafik tidak penuh angka 0."""
+    return [
+        format_number(v) if pd.notna(v) and float(v) > 0 else ""
+        for v in values
+    ]
+
+
+def short_month_labels():
+    return [
+        "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+        "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+    ]
+
+
+def show_kpi_tags(values, title, icon="📌"):
+    """Tampilkan rincian KPI sebagai chip/tag yang rapi dan responsif."""
+    cleaned = sorted({str(v).strip() for v in values if pd.notna(v) and str(v).strip()})
+    if not cleaned:
+        return
+
+    tags = "".join(
+        '<span style="display:inline-block; flex:1 1 30%; min-width:220px; '
+        'padding:9px 12px; border:1px solid #dce8f1; border-radius:10px; '
+        'background:#f7fbfe; color:#35546d; font-size:11px; line-height:1.35; '
+        'box-sizing:border-box;">' + html.escape(v) + '</span>'
+        for v in cleaned
+    )
+
+    st.markdown(
+        '<div style="margin:4px 0 18px 0; padding:14px 16px 16px 16px; '
+        'border:1px solid #dce8f1; border-radius:14px; background:rgba(255,255,255,.72);">'
+        '<div style="font-size:12px; font-weight:700; color:#17324d; margin-bottom:10px;">'
+        + icon + ' ' + html.escape(title) + ' <span style="font-weight:500; color:#7a8ea0;">('
+        + str(len(cleaned)) + ')</span></div>'
+        '<div style="display:flex; flex-wrap:wrap; gap:8px; align-items:stretch;">'
+        + tags + '</div></div>',
+        unsafe_allow_html=True
+    )
 
 
 # =========================================================
@@ -1699,372 +2059,114 @@ def create_dashboard_pdf(training_df=None, bim_df=None, rekap_df=None, rekap_bim
 # EXPORT HASIL ANALISIS
 # =========================================================
 
-def create_analysis_excel(
-    training_df=None,
-    bim_df=None
-):
+def create_analysis_excel(training_df=None, bim_df=None):
+    """Membuat workbook Excel analisis yang rapi, terformat, dan siap dibagikan."""
+    from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+    from openpyxl.utils import get_column_letter
+    from openpyxl.worksheet.table import Table, TableStyleInfo
 
     output = BytesIO()
+    NAVY, TEAL, LIGHT, LIGHER, LINE, WHITE, DARK = "12324A", "0B8F91", "EAF5F7", "F6FAFB", "C7DCE5", "FFFFFF", "19354A"
 
-    with pd.ExcelWriter(
-        output,
-        engine="openpyxl"
-    ) as writer:
+    def write_df(writer, df, sheet_name, title=None, make_table=True):
+        if df is None or df.empty:
+            return
+        name = sheet_name[:31]
+        ws = writer.book.create_sheet(name)
+        data = df.copy()
+        if title:
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max(1, len(data.columns)))
+            c = ws.cell(1, 1, title)
+            c.font = Font(name="Aptos Display", size=14, bold=True, color=WHITE)
+            c.fill = PatternFill("solid", fgColor=NAVY)
+            c.alignment = Alignment(vertical="center")
+            ws.row_dimensions[1].height = 27
+            header_row = 3
+        else:
+            header_row = 1
+        for j, col in enumerate(data.columns, 1):
+            c = ws.cell(header_row, j, str(col))
+            c.font = Font(name="Aptos", bold=True, color=WHITE)
+            c.fill = PatternFill("solid", fgColor=TEAL)
+            c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            c.border = Border(bottom=Side(style="thin", color=LINE))
+        for i, row in enumerate(data.itertuples(index=False, name=None), header_row + 1):
+            for j, value in enumerate(row, 1):
+                c = ws.cell(i, j, value)
+                c.font = Font(name="Aptos", size=10, color=DARK)
+                c.alignment = Alignment(vertical="top", wrap_text=True)
+                if i % 2 == 0:
+                    c.fill = PatternFill("solid", fgColor=LIGHER)
+        last_col = get_column_letter(len(data.columns))
+        last_row = header_row + len(data)
+        ws.freeze_panes = f"A{header_row + 1}"
+        ws.auto_filter.ref = f"A{header_row}:{last_col}{last_row}"
+        ws.sheet_view.showGridLines = False
+        for j, col in enumerate(data.columns, 1):
+            vals = [str(col)] + [str(v) if v is not None else "" for v in data.iloc[:, j-1].head(150)]
+            ws.column_dimensions[get_column_letter(j)].width = min(max(max(map(len, vals)) + 2, 11), 36)
+        if make_table and len(data) > 0:
+            safe = "Tbl" + "".join(ch for ch in sheet_name if ch.isalnum())[:20]
+            tab = Table(displayName=safe, ref=f"A{header_row}:{last_col}{last_row}")
+            tab.tableStyleInfo = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False, showRowStripes=True, showColumnStripes=False)
+            ws.add_table(tab)
 
+    def summary(writer, sheet, title, items):
+        write_df(writer, pd.DataFrame(items, columns=["Indikator", "Nilai"]), sheet, title, make_table=False)
+        ws = writer.book[sheet]
+        ws.column_dimensions["A"].width = 32
+        ws.column_dimensions["B"].width = 22
+        for r in range(4, 4 + len(items)):
+            ws.cell(r, 2).font = Font(name="Aptos", size=11, bold=True, color=TEAL)
 
-        # =================================================
-        # PELATIHAN
-        # =================================================
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        info = pd.DataFrame([
+            ["Laporan", "Hasil Analisis Dashboard Produktivitas 2026"],
+            ["Sumber", "Data sesuai filter aktif pada dashboard"],
+            ["Isi", "Data detail, KPI, distribusi, dan insight analisis"],
+            ["Catatan", "Setiap sheet dapat difilter dan di-sort untuk eksplorasi lebih lanjut."],
+        ], columns=["Keterangan", "Detail"])
+        write_df(writer, info, "Petunjuk", "Hasil Analisis Dashboard Produktivitas 2026", make_table=False)
+        ws = writer.book["Petunjuk"]; ws.column_dimensions["A"].width = 24; ws.column_dimensions["B"].width = 78
 
-        if (
-            training_df is not None
-            and not training_df.empty
-        ):
-
-            # Data filter
-
-            training_df.to_excel(
-                writer,
-                sheet_name="Data Pelatihan",
-                index=False
-            )
-
-
-            # KPI
-
-            total_peserta = len(
-                training_df
-            )
-
-            total_program = (
-                training_df[
-                    "Judul Program Pelatihan"
-                ].nunique()
-                if "Judul Program Pelatihan"
-                in training_df.columns
-                else 0
-            )
-
-            total_provinsi = (
-                training_df[
-                    "Provinsi"
-                ].nunique()
-                if "Provinsi"
-                in training_df.columns
-                else 0
-            )
-
-            total_lembaga = (
-                training_df[
-                    "Nama Lembaga"
-                ].nunique()
-                if "Nama Lembaga"
-                in training_df.columns
-                else 0
-            )
-
-
-            kpi = pd.DataFrame({
-
-                "Indikator": [
-
-                    "Total Peserta",
-                    "Total Program",
-                    "Total Provinsi",
-                    "Total Lembaga"
-
-                ],
-
-                "Nilai": [
-
-                    total_peserta,
-                    total_program,
-                    total_provinsi,
-                    total_lembaga
-
-                ]
-
-            })
-
-
-            kpi.to_excel(
-                writer,
-                sheet_name="KPI Pelatihan",
-                index=False
-            )
-
-
-            # Peserta per bulan
-
-            bulanan = monthly_data(
-                training_df,
-                "Bulan Pelatihan",
-                "Jumlah Peserta"
-            )
-
-            bulanan.to_excel(
-                writer,
-                sheet_name="Peserta per Bulan",
-                index=False
-            )
-
-
-            # Provinsi
-
+        if training_df is not None and not training_df.empty:
+            write_df(writer, training_df, "Data Pelatihan", "Data Pelatihan — Sesuai Filter Aktif")
+            summary(writer, "KPI Pelatihan", "KPI Pelatihan Produktivitas", [
+                ["Total Peserta", len(training_df)],
+                ["Total Program", training_df["Judul Program Pelatihan"].nunique() if "Judul Program Pelatihan" in training_df.columns else 0],
+                ["Total Provinsi", training_df["Provinsi"].nunique() if "Provinsi" in training_df.columns else 0],
+                ["Total Lembaga", training_df["Nama Lembaga"].nunique() if "Nama Lembaga" in training_df.columns else 0],
+            ])
+            write_df(writer, monthly_data(training_df, "Bulan Pelatihan", "Jumlah Peserta"), "Peserta per Bulan", "Distribusi Peserta per Bulan")
             if "Provinsi" in training_df.columns:
-
-                provinsi = (
-                    training_df["Provinsi"]
-                    .fillna("Tidak Diisi")
-                    .value_counts()
-                    .reset_index()
-                )
-
-                provinsi.columns = [
-                    "Provinsi",
-                    "Jumlah Peserta"
-                ]
-
-                provinsi.to_excel(
-                    writer,
-                    sheet_name="Peserta per Provinsi",
-                    index=False
-                )
-
-
-            # Kelulusan
-
+                x = training_df["Provinsi"].fillna("Tidak Diisi").value_counts().reset_index(); x.columns = ["Provinsi", "Jumlah Peserta"]
+                write_df(writer, x, "Peserta per Provinsi", "Distribusi Peserta per Provinsi")
             if "Status KeLulusan" in training_df.columns:
-
-                status = (
-                    training_df["Status KeLulusan"]
-                    .fillna("Tidak Diisi")
-                    .value_counts()
-                    .reset_index()
-                )
-
-                status.columns = [
-                    "Status Kelulusan",
-                    "Jumlah"
-                ]
-
-                status.to_excel(
-                    writer,
-                    sheet_name="Status Kelulusan",
-                    index=False
-                )
-
-
-            # Metode
-
+                x = training_df["Status KeLulusan"].fillna("Tidak Diisi").value_counts().reset_index(); x.columns = ["Status Kelulusan", "Jumlah"]
+                write_df(writer, x, "Status Kelulusan", "Distribusi Status Kelulusan")
             if "Metode Pelatihan" in training_df.columns:
+                x = training_df["Metode Pelatihan"].fillna("Tidak Diisi").value_counts().reset_index(); x.columns = ["Metode Pelatihan", "Jumlah"]
+                write_df(writer, x, "Metode Pelatihan", "Distribusi Metode Pelatihan")
+            write_df(writer, pd.DataFrame({"Insight": [x.replace("**", "") for x in insights_training(training_df)]}), "Insight Pelatihan", "Insight Analisis Pelatihan", False)
 
-                metode = (
-                    training_df["Metode Pelatihan"]
-                    .fillna("Tidak Diisi")
-                    .value_counts()
-                    .reset_index()
-                )
-
-                metode.columns = [
-                    "Metode Pelatihan",
-                    "Jumlah"
-                ]
-
-                metode.to_excel(
-                    writer,
-                    sheet_name="Metode Pelatihan",
-                    index=False
-                )
-
-
-            # Insight
-
-            insight_text = insights_training(
-                training_df
-            )
-
-            insight_df = pd.DataFrame({
-
-                "Insight": [
-                    x.replace("**", "")
-                    for x in insight_text
-                ]
-
-            })
-
-            insight_df.to_excel(
-                writer,
-                sheet_name="Insight Analisis",
-                index=False
-            )
-
-
-        # =================================================
-        # BIMBINGAN
-        # =================================================
-
-        if (
-            bim_df is not None
-            and not bim_df.empty
-        ):
-
-            bim_df.to_excel(
-                writer,
-                sheet_name="Data Bimbingan",
-                index=False
-            )
-
-
-            total_kegiatan = len(
-                bim_df
-            )
-
-            total_perusahaan = (
-                bim_df[
-                    "NAMA PERUSAHAAN"
-                ].nunique()
-                if "NAMA PERUSAHAAN"
-                in bim_df.columns
-                else 0
-            )
-
-            total_wilayah = (
-                bim_df[
-                    "NAMA KABUPATEN/KOTA"
-                ].nunique()
-                if "NAMA KABUPATEN/KOTA"
-                in bim_df.columns
-                else 0
-            )
-
-            total_bidang = (
-                bim_df[
-                    "Bidang Usaha Kategori"
-                ].nunique()
-                if "Bidang Usaha Kategori"
-                in bim_df.columns
-                else 0
-            )
-
-
-            kpi = pd.DataFrame({
-
-                "Indikator": [
-
-                    "Total Kegiatan",
-                    "Total Perusahaan",
-                    "Total Wilayah",
-                    "Kategori Bidang Usaha"
-
-                ],
-
-                "Nilai": [
-
-                    total_kegiatan,
-                    total_perusahaan,
-                    total_wilayah,
-                    total_bidang
-
-                ]
-
-            })
-
-
-            kpi.to_excel(
-                writer,
-                sheet_name="KPI Bimbingan",
-                index=False
-            )
-
-
-            # Bulanan
-
-            bulanan = monthly_data(
-                bim_df,
-                "Bulan Bimbingan",
-                "Jumlah Kegiatan"
-            )
-
-            bulanan.to_excel(
-                writer,
-                sheet_name="Bimbingan per Bulan",
-                index=False
-            )
-
-
-            # Bidang usaha
-
+        if bim_df is not None and not bim_df.empty:
+            write_df(writer, bim_df, "Data Bimbingan", "Data Bimbingan — Sesuai Filter Aktif")
+            summary(writer, "KPI Bimbingan", "KPI Bimbingan Konsultasi", [
+                ["Total Kegiatan", len(bim_df)],
+                ["Total Perusahaan", bim_df["NAMA PERUSAHAAN"].nunique() if "NAMA PERUSAHAAN" in bim_df.columns else 0],
+                ["Total Wilayah", bim_df["NAMA KABUPATEN/KOTA"].nunique() if "NAMA KABUPATEN/KOTA" in bim_df.columns else 0],
+                ["Kategori Bidang Usaha", bim_df["Bidang Usaha Kategori"].nunique() if "Bidang Usaha Kategori" in bim_df.columns else 0],
+            ])
+            write_df(writer, monthly_data(bim_df, "Bulan Bimbingan", "Jumlah Kegiatan"), "Bimbingan per Bulan", "Distribusi Bimbingan per Bulan")
             if "Bidang Usaha Kategori" in bim_df.columns:
-
-                bidang = (
-                    bim_df[
-                        "Bidang Usaha Kategori"
-                    ]
-                    .fillna("Tidak Diisi")
-                    .value_counts()
-                    .reset_index()
-                )
-
-                bidang.columns = [
-                    "Bidang Usaha",
-                    "Jumlah Kegiatan"
-                ]
-
-                bidang.to_excel(
-                    writer,
-                    sheet_name="Bidang Usaha",
-                    index=False
-                )
-
-
-            # Wilayah
-
+                x = bim_df["Bidang Usaha Kategori"].fillna("Tidak Diisi").value_counts().reset_index(); x.columns = ["Bidang Usaha", "Jumlah Kegiatan"]
+                write_df(writer, x, "Bidang Usaha", "Distribusi Bimbingan per Bidang Usaha")
             if "NAMA KABUPATEN/KOTA" in bim_df.columns:
+                x = bim_df["NAMA KABUPATEN/KOTA"].fillna("Tidak Diisi").value_counts().reset_index(); x.columns = ["Wilayah", "Jumlah Kegiatan"]
+                write_df(writer, x, "Wilayah", "Distribusi Bimbingan per Wilayah")
+            write_df(writer, pd.DataFrame({"Insight": [x.replace("**", "") for x in insights_bim(bim_df)]}), "Insight Bimbingan", "Insight Analisis Bimbingan", False)
 
-                wilayah = (
-                    bim_df[
-                        "NAMA KABUPATEN/KOTA"
-                    ]
-                    .fillna("Tidak Diisi")
-                    .value_counts()
-                    .reset_index()
-                )
-
-                wilayah.columns = [
-                    "Wilayah",
-                    "Jumlah Kegiatan"
-                ]
-
-                wilayah.to_excel(
-                    writer,
-                    sheet_name="Wilayah",
-                    index=False
-                )
-
-
-            # Insight
-
-            insight_text = insights_bim(
-                bim_df
-            )
-
-            insight_df = pd.DataFrame({
-
-                "Insight": [
-                    x.replace("**", "")
-                    for x in insight_text
-                ]
-
-            })
-
-            insight_df.to_excel(
-                writer,
-                sheet_name="Insight Analisis",
-                index=False
-            )
-
-
+    output.seek(0)
     return output.getvalue()
 
 
@@ -2074,10 +2176,11 @@ def create_analysis_excel(
 # Halaman pembuka hanya ditampilkan sebelum file Excel dipilih.
 # Setelah file dipilih, aplikasi langsung masuk ke menu dashboard.
 
-if "excel_files" not in st.session_state:
-    st.session_state.excel_files = []
+if "excel_bytes" not in st.session_state:
+    st.session_state.excel_bytes = None
+    st.session_state.excel_name = ""
 
-if not st.session_state.excel_files:
+if st.session_state.excel_bytes is None:
     st.markdown("### MONITORING PROGRAM • 2026")
 
     hero_left, hero_right = st.columns([1.35, 0.65], gap="large", vertical_alignment="center")
@@ -2091,12 +2194,6 @@ if not st.session_state.excel_files:
             "bahan evaluasi dan pengambilan keputusan."
         )
 
-    with hero_right:
-        with st.container(border=True):
-            st.markdown("#### 📊 Monitoring & Evaluasi")
-            st.markdown("**Pelatihan**  •  **Bimbingan**")
-            st.markdown("**Realisasi**  •  **Insight**")
-            st.caption("Data dianalisis langsung dari file Excel yang Anda unggah.")
 
     st.divider()
 
@@ -2106,12 +2203,12 @@ if not st.session_state.excel_files:
     with c1:
         with st.container(border=True):
             st.markdown("#### 🎓 Pelatihan")
-            st.caption("Peserta, program, provinsi, metode dan kelulusan.")
+            st.caption("Peserta, program, provinsi, metode, dan kelulusan.")
 
     with c2:
         with st.container(border=True):
             st.markdown("#### 🤝 Bimbingan")
-            st.caption("Perusahaan, wilayah, bidang usaha dan kegiatan.")
+            st.caption("Perusahaan, wilayah, bidang usaha, dan kegiatan.")
 
     with c3:
         with st.container(border=True):
@@ -2127,50 +2224,101 @@ if not st.session_state.excel_files:
 
     st.markdown("### Mulai Analisis Data")
     st.caption(
-        "Upload satu atau beberapa file Excel. Data dari file-file yang dipilih "
-        "akan dibersihkan dan digabungkan secara otomatis."
+        "Upload file Excel untuk membuka dashboard. Data akan dibersihkan dan "
+        "distandarkan secara otomatis."
     )
 
     upload_box = st.container(border=True)
     with upload_box:
         uploaded = st.file_uploader(
-            "Upload File Excel (bisa beberapa file)",
+            "Upload File Excel",
             type=["xlsx"],
-            accept_multiple_files=True,
-            help="Pilih satu atau beberapa file Excel data produktivitas.",
+            help="Upload file Excel data produktivitas.",
             key="excel_uploader"
         )
 
-    if not uploaded:
-        st.info("Pilih satu atau beberapa file Excel untuk melanjutkan ke dashboard analisis.")
+    if uploaded is None:
+        st.info("Pilih file Excel untuk melanjutkan ke dashboard analisis.")
         st.stop()
 
-    st.session_state.excel_files = [
-        (file.name, file.getvalue())
-        for file in uploaded
-    ]
-    st.session_state.excel_names = [file.name for file in uploaded]
+    st.session_state.excel_bytes = uploaded.getvalue()
+    st.session_state.excel_name = uploaded.name
     st.rerun()
 
 
 # File yang sudah dipilih disimpan di session agar halaman pembuka tidak
 # muncul lagi ketika pengguna berpindah menu.
-file_items = st.session_state.excel_files
+file_bytes = st.session_state.excel_bytes
 
 # =========================================================
 # PROSES DATA
 # =========================================================
 
 with st.spinner(
-    "⏳ Membaca dan membersihkan data dari semua file..."
+    "⏳ Membaca dan membersihkan data..."
 ):
-    train, bim, rekap, rekap_bim = process_uploaded_files(file_items)
+
+    sheets = load_excel(
+        file_bytes
+    )
 
 
-st.success(
-    f"✅ {format_number(len(file_items))} file berhasil diproses — "
-    f"{format_number(len(train))} data pelatihan dan "
-    f"{format_number(len(bim))} data bimbingan."
+    train = (
+
+        clean_training(
+            sheets[TRAIN_SHEET]
+        )
+
+        if TRAIN_SHEET in sheets
+
+        else pd.DataFrame()
+    )
+
+
+    bim = (
+
+        clean_bim(
+            sheets[BIM_SHEET]
+        )
+
+        if BIM_SHEET in sheets
+
+        else pd.DataFrame()
+    )
+
+
+    rekap = (
+
+        clean_rekap_realisasi(
+            sheets[REKAP_SHEET]
+        )
+
+        if REKAP_SHEET in sheets
+
+        else pd.DataFrame()
+    )
+
+
+    rekap_bim = (
+
+        clean_rekap_bimkon(
+            sheets[REKAP_BIM_SHEET]
+        )
+
+        if REKAP_BIM_SHEET in sheets
+
+        else pd.DataFrame()
+    )
+
+
+st.markdown(
+    f"""
+    <div class="data-note">
+        <span>✓</span>
+        <span><strong>Data siap dianalisis.</strong> {format_number(len(train))} data pelatihan dan {format_number(len(bim))} data bimbingan berhasil diproses.</span>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
 
@@ -2179,14 +2327,15 @@ st.success(
 # =========================================================
 
 st.sidebar.markdown(
-    "## 📊 Dashboard"
+    """
+    <div class="sidebar-brand">
+        <div class="brand-mark">◈</div>
+        <div class="brand-title">Produktivitas</div>
+        <div class="brand-sub">Monitoring Dashboard • 2026</div>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
-
-st.sidebar.caption(
-    "Analisis Produktivitas 2026"
-)
-
-st.sidebar.divider()
 
 
 page = st.sidebar.radio(
@@ -2212,9 +2361,12 @@ st.sidebar.divider()
 
 if page == "🏠 Overview":
 
-    st.header("🏠 Overview Produktivitas 2026")
-    st.caption("Ringkasan pelaksanaan Pelatihan Produktivitas dan Bimbingan Konsultasi")
-    st.divider()
+    page_hero(
+        "MONITORING PROGRAM • 2026",
+        "Dashboard Produktivitas 2026",
+        "Ringkasan pelaksanaan Pelatihan Produktivitas dan Bimbingan Konsultasi untuk monitoring, evaluasi, dan pelaporan.",
+        show_decorative=True
+    )
 
 
     total_program = (
@@ -2265,7 +2417,6 @@ if page == "🏠 Overview":
             )
         )
 
-
     with c:
 
         st.metric(
@@ -2286,9 +2437,8 @@ if page == "🏠 Overview":
         )
 
 
-    st.markdown(
-        "### 📈 Gambaran Aktivitas"
-    )
+
+    section_heading("📈 Gambaran Aktivitas", "Tren utama aktivitas program sepanjang periode data yang tersedia.")
 
 
     col1, col2 = st.columns(2)
@@ -2311,17 +2461,21 @@ if page == "🏠 Overview":
             x="Bulan",
             y="Peserta",
             markers=True,
-            text="Peserta",
             title="🎓 Tren Peserta Pelatihan"
         )
 
         fig.update_traces(
-            line_width=4,
-            textposition="top center"
+            line_width=3, marker_size=7,
+            hovertemplate="<b>%{x}</b><br>Peserta: %{y}<extra></extra>"
         )
+        fig.update_xaxes(
+            tickmode="array", tickvals=MONTHS,
+            ticktext=short_month_labels(), tickangle=0, title_text=None
+        )
+        fig.update_yaxes(title_text=None, rangemode="tozero", tickformat=",d")
 
         st.plotly_chart(
-            style_chart(fig),
+            style_chart(fig, 330),
             use_container_width=True
         )
 
@@ -2342,16 +2496,24 @@ if page == "🏠 Overview":
             x,
             x="Bulan",
             y="Kegiatan",
-            text="Kegiatan",
             title="🤝 Tren Bimbingan Konsultasi"
         )
 
         fig.update_traces(
-            textposition="outside"
+            cliponaxis=False,
+            hovertemplate="<b>%{x}</b><br>Kegiatan: %{y}<extra></extra>"
         )
+        fig.update_xaxes(
+            tickmode="array",
+            tickvals=MONTHS,
+            ticktext=short_month_labels(),
+            tickangle=0,
+            title_text=None
+        )
+        fig.update_yaxes(title_text=None, rangemode="tozero", tickformat=",d")
 
         st.plotly_chart(
-            style_chart(fig),
+            style_chart(fig, 330),
             use_container_width=True
         )
 
@@ -2360,9 +2522,7 @@ if page == "🏠 Overview":
     # INSIGHT
     # -----------------------------------------------------
 
-    st.markdown(
-        "### 💡 Temuan Utama"
-    )
+    section_heading("💡 Temuan Utama", "Insight otomatis berdasarkan data yang sedang ditampilkan.")
 
 
     ta = insights_training(
@@ -2384,8 +2544,7 @@ if page == "🏠 Overview":
         )
 
         for text in ta:
-            with st.container(border=True):
-                st.markdown(text.replace("**", ""))
+            insight_card(text)
 
 
     with col2:
@@ -2395,8 +2554,7 @@ if page == "🏠 Overview":
         )
 
         for text in ba:
-            with st.container(border=True):
-                st.markdown(text.replace("**", ""))
+            insight_card(text)
 
 
     # -----------------------------------------------------
@@ -2419,9 +2577,11 @@ if page == "🏠 Overview":
 
 elif page == "🎓 Pelatihan Produktivitas":
 
-    st.header("🎓 Pelatihan Produktivitas")
-    st.caption("Analisis peserta, program, provinsi, kelulusan, dan metode pelatihan")
-    st.divider()
+    page_hero(
+        "PELATIHAN",
+        "Pelatihan Produktivitas",
+        "Pantau peserta, program, sebaran provinsi, metode pelatihan, dan status kelulusan secara ringkas."
+    )
 
 
     st.sidebar.markdown(
@@ -2520,7 +2680,6 @@ elif page == "🎓 Pelatihan Produktivitas":
             )
         )
 
-
     with c:
 
         total_provinsi = (
@@ -2565,11 +2724,19 @@ elif page == "🎓 Pelatihan Produktivitas":
         )
 
 
+    if "Judul Program Pelatihan" in f.columns:
+        show_kpi_tags(
+            f["Judul Program Pelatihan"].dropna().unique(),
+            "Program pelatihan yang tercakup",
+            icon="📚"
+        )
+
+
     # -----------------------------------------------------
     # STATUS REALISASI LEMBAGA
     # -----------------------------------------------------
 
-    st.markdown("### 🏢 Status Realisasi Lembaga")
+    section_heading("🏢 Status Realisasi Lembaga", "Perbandingan lembaga yang sudah dan belum terealisasi.")
     st.caption(
         "Menunjukkan lembaga/instansi yang sudah memiliki realisasi pelatihan P3 dan yang belum terealisasi."
     )
@@ -2594,10 +2761,14 @@ elif page == "🎓 Pelatihan Produktivitas":
         })
         fig_status = px.bar(
             status_chart, x="Status", y="Jumlah Lembaga",
-            text="Jumlah Lembaga", title="Status Realisasi Lembaga/Instansi"
+            title="Status Realisasi Lembaga/Instansi"
         )
-        fig_status.update_traces(textposition="outside")
-        st.plotly_chart(style_chart(fig_status, 350), use_container_width=True)
+        fig_status.update_traces(
+            hovertemplate="<b>%{x}</b><br>Jumlah lembaga: %{y}<extra></extra>"
+        )
+        fig_status.update_xaxes(title_text=None, tickangle=0)
+        fig_status.update_yaxes(title_text=None, rangemode="tozero", tickformat=",d")
+        st.plotly_chart(style_chart(fig_status, 330), use_container_width=True)
 
         t1, t2 = st.columns(2)
         with t1:
@@ -2619,9 +2790,7 @@ elif page == "🎓 Pelatihan Produktivitas":
     # ANALISIS
     # -----------------------------------------------------
 
-    st.markdown(
-        "### 📊 Analisis Pelatihan"
-    )
+    section_heading("📊 Analisis Pelatihan", "Distribusi peserta dan karakteristik pelatihan.")
 
 
     col1, col2 = st.columns(2)
@@ -2642,17 +2811,26 @@ elif page == "🎓 Pelatihan Produktivitas":
             x="Bulan",
             y="Peserta",
             markers=True,
-            text="Peserta",
             title="📈 Peserta per Bulan"
         )
 
         fig.update_traces(
-            line_width=4,
-            textposition="top center"
+            mode="lines+markers",
+            line_width=3,
+            marker_size=7,
+            hovertemplate="<b>%{x}</b><br>Peserta: %{y}<extra></extra>"
         )
+        fig.update_xaxes(
+            tickmode="array",
+            tickvals=MONTHS,
+            ticktext=short_month_labels(),
+            tickangle=0,
+            title_text=None
+        )
+        fig.update_yaxes(title_text=None, rangemode="tozero", tickformat=",d")
 
         st.plotly_chart(
-            style_chart(fig),
+            style_chart(fig, 320),
             use_container_width=True
         )
 
@@ -2682,16 +2860,17 @@ elif page == "🎓 Pelatihan Produktivitas":
                 x="Peserta",
                 y="Provinsi",
                 orientation="h",
-                text="Peserta",
                 title="🏆 Top 10 Provinsi"
             )
 
             fig.update_traces(
-                textposition="outside"
+                hovertemplate="<b>%{y}</b><br>Peserta: %{x}<extra></extra>"
             )
+            fig.update_xaxes(title_text=None, rangemode="tozero", tickformat=",d")
+            fig.update_yaxes(title_text=None, autorange=True)
 
             st.plotly_chart(
-                style_chart(fig),
+                style_chart(fig, 340, horizontal=True),
                 use_container_width=True
             )
 
@@ -2725,16 +2904,28 @@ elif page == "🎓 Pelatihan Produktivitas":
                 x,
                 names="Status",
                 values="Jumlah",
-                hole=0.55,
+                hole=0.62,
                 title="🎓 Status Kelulusan"
             )
 
             fig.update_traces(
-                textinfo="percent+label"
+                textinfo="none",
+                hovertemplate="<b>%{label}</b><br>Jumlah: %{value}<br>Proporsi: %{percent}<extra></extra>"
+            )
+            fig.update_layout(
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.05,
+                    x=0.5,
+                    xanchor="center",
+                    font=dict(size=10)
+                )
             )
 
             st.plotly_chart(
-                style_chart(fig, 350),
+                style_chart(fig, 340, show_legend=True),
                 use_container_width=True
             )
 
@@ -2761,16 +2952,17 @@ elif page == "🎓 Pelatihan Produktivitas":
                 x,
                 x="Metode",
                 y="Jumlah",
-                text="Jumlah",
                 title="⚙️ Metode Pelatihan"
             )
 
             fig.update_traces(
-                textposition="outside"
+                hovertemplate="<b>%{x}</b><br>Peserta: %{y}<extra></extra>"
             )
+            fig.update_xaxes(title_text=None, tickangle=0, automargin=True)
+            fig.update_yaxes(title_text=None, rangemode="tozero", tickformat=",d")
 
             st.plotly_chart(
-                style_chart(fig, 350),
+                style_chart(fig, 320),
                 use_container_width=True
             )
 
@@ -2779,9 +2971,7 @@ elif page == "🎓 Pelatihan Produktivitas":
     # INSIGHT
     # -----------------------------------------------------
 
-    st.markdown(
-        "### 💡 Insight Otomatis"
-    )
+    section_heading("💡 Insight Otomatis", "Temuan yang dihasilkan otomatis dari data terfilter.")
 
 
     if f.empty:
@@ -2793,8 +2983,7 @@ elif page == "🎓 Pelatihan Produktivitas":
     else:
 
         for text in insights_training(f):
-
-            st.info(text.replace("**", ""))
+            insight_card(text)
 
 
     # -----------------------------------------------------
@@ -2816,6 +3005,14 @@ elif page == "🎓 Pelatihan Produktivitas":
             mime="application/pdf",
             use_container_width=True
         )
+        excel_training = create_analysis_excel(training_df=f)
+        st.download_button(
+            label="📊 Download Data & Analisis Pelatihan (Excel)",
+            data=excel_training,
+            file_name="Hasil_Analisis_Pelatihan_Produktivitas_2026.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
 
 
 # =========================================================
@@ -2824,9 +3021,11 @@ elif page == "🎓 Pelatihan Produktivitas":
 
 elif page == "🤝 Bimbingan Konsultasi":
 
-    st.header("🤝 Bimbingan Konsultasi")
-    st.caption("Analisis kegiatan, perusahaan, wilayah, bidang usaha, dan pelaksana")
-    st.divider()
+    page_hero(
+        "BIMBINGAN & KONSULTASI",
+        "Bimbingan Konsultasi",
+        "Pantau kegiatan pendampingan berdasarkan perusahaan, wilayah, bidang usaha, dan pelaksana."
+    )
 
 
     st.sidebar.markdown(
@@ -2966,7 +3165,7 @@ elif page == "🤝 Bimbingan Konsultasi":
     # STATUS REALISASI LEMBAGA / INSTANSI
     # -----------------------------------------------------
 
-    st.markdown("### 🏢 Status Realisasi Bimbingan Konsultasi")
+    section_heading("🏢 Status Realisasi Bimbingan Konsultasi", "Perbandingan lembaga/instansi yang sudah dan belum terealisasi.")
     st.caption(
         "Menunjukkan lembaga/instansi yang sudah memiliki realisasi bimbingan konsultasi dan yang belum terealisasi."
     )
@@ -3003,12 +3202,15 @@ elif page == "🤝 Bimbingan Konsultasi":
             status_bim_chart,
             x="Status",
             y="Jumlah Lembaga",
-            text="Jumlah Lembaga",
             title="Status Realisasi Bimbingan Konsultasi"
         )
-        fig_status_bim.update_traces(textposition="outside")
+        fig_status_bim.update_traces(
+            hovertemplate="<b>%{x}</b><br>Jumlah lembaga: %{y}<extra></extra>"
+        )
+        fig_status_bim.update_xaxes(title_text=None, tickangle=0)
+        fig_status_bim.update_yaxes(title_text=None, rangemode="tozero", tickformat=",d")
         st.plotly_chart(
-            style_chart(fig_status_bim, 350),
+            style_chart(fig_status_bim, 330),
             use_container_width=True
         )
 
@@ -3059,9 +3261,7 @@ elif page == "🤝 Bimbingan Konsultasi":
     # GRAFIK
     # -----------------------------------------------------
 
-    st.markdown(
-        "### 📊 Analisis Bimbingan"
-    )
+    section_heading("📊 Analisis Bimbingan", "Distribusi kegiatan berdasarkan bidang usaha, wilayah, dan waktu.")
 
 
     col1, col2 = st.columns(2)
@@ -3093,16 +3293,17 @@ elif page == "🤝 Bimbingan Konsultasi":
                 x="Jumlah",
                 y="Bidang Usaha",
                 orientation="h",
-                text="Jumlah",
                 title="🏭 Bimbingan per Bidang Usaha"
             )
 
             fig.update_traces(
-                textposition="outside"
+                hovertemplate="<b>%{y}</b><br>Jumlah: %{x}<extra></extra>"
             )
+            fig.update_xaxes(title_text=None, rangemode="tozero", tickformat=",d")
+            fig.update_yaxes(title_text=None)
 
             st.plotly_chart(
-                style_chart(fig),
+                style_chart(fig, 340, horizontal=True),
                 use_container_width=True
             )
 
@@ -3134,16 +3335,17 @@ elif page == "🤝 Bimbingan Konsultasi":
                 x="Jumlah",
                 y="Wilayah",
                 orientation="h",
-                text="Jumlah",
                 title="📍 Top 10 Wilayah"
             )
 
             fig.update_traces(
-                textposition="outside"
+                hovertemplate="<b>%{y}</b><br>Jumlah: %{x}<extra></extra>"
             )
+            fig.update_xaxes(title_text=None, rangemode="tozero", tickformat=",d")
+            fig.update_yaxes(title_text=None)
 
             st.plotly_chart(
-                style_chart(fig),
+                style_chart(fig, 340, horizontal=True),
                 use_container_width=True
             )
 
@@ -3163,17 +3365,21 @@ elif page == "🤝 Bimbingan Konsultasi":
         x="Bulan",
         y="Kegiatan",
         markers=True,
-        text="Kegiatan",
         title="📅 Jumlah Bimbingan per Bulan"
     )
 
     fig.update_traces(
-        line_width=4,
-        textposition="top center"
+        line_width=3, marker_size=7,
+        hovertemplate="<b>%{x}</b><br>Kegiatan: %{y}<extra></extra>"
     )
+    fig.update_xaxes(
+        tickmode="array", tickvals=MONTHS,
+        ticktext=short_month_labels(), tickangle=0, title_text=None
+    )
+    fig.update_yaxes(title_text=None, rangemode="tozero", tickformat=",d")
 
     st.plotly_chart(
-        style_chart(fig),
+        style_chart(fig, 340),
         use_container_width=True
     )
 
@@ -3182,9 +3388,7 @@ elif page == "🤝 Bimbingan Konsultasi":
     # INSIGHT
     # -----------------------------------------------------
 
-    st.markdown(
-        "### 💡 Insight Otomatis"
-    )
+    section_heading("💡 Insight Otomatis", "Temuan yang dihasilkan otomatis dari data terfilter.")
 
 
     if f.empty:
@@ -3196,8 +3400,7 @@ elif page == "🤝 Bimbingan Konsultasi":
     else:
 
         for text in insights_bim(f):
-
-            st.info(text.replace("**", ""))
+            insight_card(text)
 
 
     # -----------------------------------------------------
@@ -3233,6 +3436,14 @@ elif page == "🤝 Bimbingan Konsultasi":
             mime="application/pdf",
             use_container_width=True
         )
+        excel_bim = create_analysis_excel(bim_df=f)
+        st.download_button(
+            label="📊 Download Data & Analisis Bimbingan (Excel)",
+            data=excel_bim,
+            file_name="Hasil_Analisis_Bimbingan_Konsultasi_2026.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
 
 
 # =========================================================
@@ -3241,9 +3452,11 @@ elif page == "🤝 Bimbingan Konsultasi":
 
 else:
 
-    st.header("📋 Data Detail & Hasil Cleaning")
-    st.caption("Data setelah proses cleaning dan standardisasi")
-    st.divider()
+    page_hero(
+        "DATA MANAGEMENT",
+        "Data Detail & Hasil Cleaning",
+        "Periksa data yang telah dibersihkan dan distandarkan sebelum digunakan untuk analisis."
+    )
 
 
     tipe = st.radio(
@@ -3330,9 +3543,3 @@ else:
 # FOOTER
 # =========================================================
 
-st.divider()
-
-st.caption(
-    "📊 Dashboard Analisis Produktivitas 2026 • Data mengikuti file Excel yang diunggah "
-    "• Cleaning dan standardisasi dilakukan otomatis"
-)
