@@ -266,6 +266,67 @@ section[data-testid="stSidebar"] [data-testid="stSelectbox"] svg {
     margin: 0;
 }
 
+/* ========================= OVERVIEW HIGHLIGHTS ========================= */
+.overview-highlights {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: -2px 0 22px;
+}
+.overview-highlight {
+    min-height: 86px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(38,78,103,.12);
+}
+.overview-highlight-gold {
+    background: linear-gradient(135deg, #a97912 0%, #d2a43a 100%);
+}
+.overview-highlight-teal {
+    background: linear-gradient(135deg, #087d82 0%, #159c9c 100%);
+}
+.overview-highlight-blue {
+    background: linear-gradient(135deg, #176eaf 0%, #237fc5 100%);
+}
+.overview-highlight-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.24);
+    font-size: 17px;
+    font-weight: 800;
+}
+.overview-highlight-label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .10em;
+    opacity: .86;
+    margin-bottom: 3px;
+}
+.overview-highlight-title {
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.15;
+}
+.overview-highlight-text {
+    font-size: 10.5px;
+    line-height: 1.35;
+    opacity: .86;
+    margin-top: 3px;
+}
+@media (max-width: 900px) {
+    .overview-highlights { grid-template-columns: 1fr; }
+}
+
 /* ========================= SECTION LABEL ========================= */
 .section-title {
     color: #17324d;
@@ -430,16 +491,30 @@ def page_hero(eyebrow, title, subtitle, show_decorative=False):
     if show_decorative:
         st.markdown(
             """
-            <div style="display:flex; gap:12px; margin:0 0 20px; flex-wrap:wrap;">
-                <div style="flex:1; min-width:220px; background:linear-gradient(135deg,#b8891f,#d4a843); border-radius:14px; padding:15px 18px; color:#fff; box-shadow:0 7px 18px rgba(184,137,31,.28);">
-                    <div style="font-size:10px; font-weight:700; letter-spacing:.08em; opacity:.92; margin-bottom:5px;">📊 DATA TERSEDIA</div>
-                    <div style="font-size:19px; font-weight:800; line-height:1.2;">Dashboard Aktif</div>
-                    <div style="font-size:11px; opacity:.88; margin-top:3px;">Data siap untuk monitoring dan analisis</div>
+            <div class="overview-highlights">
+                <div class="overview-highlight overview-highlight-gold">
+                    <div class="overview-highlight-icon">◈</div>
+                    <div>
+                        <div class="overview-highlight-label">CAKUPAN PROGRAM</div>
+                        <div class="overview-highlight-title">2 Area Monitoring</div>
+                        <div class="overview-highlight-text">Pelatihan Produktivitas &amp; Bimbingan Konsultasi</div>
+                    </div>
                 </div>
-                <div style="flex:1; min-width:220px; background:linear-gradient(135deg,#159c9c,#48b5d9); border-radius:14px; padding:15px 18px; color:#fff; box-shadow:0 7px 18px rgba(6,117,122,.26);">
-                    <div style="font-size:10px; font-weight:700; letter-spacing:.08em; opacity:.92; margin-bottom:5px;">📅 PERIODE</div>
-                    <div style="font-size:19px; font-weight:800; line-height:1.2;">2026</div>
-                    <div style="font-size:11px; opacity:.88; margin-top:3px;">Monitoring program tahun berjalan</div>
+                <div class="overview-highlight overview-highlight-teal">
+                    <div class="overview-highlight-icon">✓</div>
+                    <div>
+                        <div class="overview-highlight-label">STATUS DATA</div>
+                        <div class="overview-highlight-title">Dashboard Aktif</div>
+                        <div class="overview-highlight-text">Data siap digunakan untuk monitoring dan analisis</div>
+                    </div>
+                </div>
+                <div class="overview-highlight overview-highlight-blue">
+                    <div class="overview-highlight-icon">2026</div>
+                    <div>
+                        <div class="overview-highlight-label">PERIODE</div>
+                        <div class="overview-highlight-title">Tahun Berjalan</div>
+                        <div class="overview-highlight-text">Ringkasan aktivitas berdasarkan data yang tersedia</div>
+                    </div>
                 </div>
             </div>
             """,
@@ -2502,7 +2577,7 @@ if page == "🏠 Overview":
 
 
 
-    section_heading("📈 Gambaran Aktivitas", "Tren utama aktivitas program sepanjang periode data yang tersedia.")
+    section_heading("📊 Gambaran Umum Data", "Ringkasan capaian Pelatihan Produktivitas dan Bimbingan Konsultasi berdasarkan data yang tersedia pada tahun 2026.")
 
 
     col1, col2 = st.columns(2)
@@ -2525,7 +2600,7 @@ if page == "🏠 Overview":
             x="Bulan",
             y="Peserta",
             markers=True,
-            title="🎓 Tren Peserta Pelatihan"
+            title="🎓 Perkembangan Peserta Pelatihan"
         )
 
         fig.update_traces(
@@ -2539,7 +2614,7 @@ if page == "🏠 Overview":
         fig.update_yaxes(title_text=None, rangemode="tozero", tickformat=",d")
 
         st.plotly_chart(
-            style_chart(fig, 330),
+            style_chart(fig, 360),
             use_container_width=True
         )
 
@@ -2560,7 +2635,7 @@ if page == "🏠 Overview":
             x,
             x="Bulan",
             y="Kegiatan",
-            title="🤝 Tren Bimbingan Konsultasi"
+            title="🤝 Perkembangan Bimbingan Konsultasi"
         )
 
         fig.update_traces(
@@ -2577,48 +2652,9 @@ if page == "🏠 Overview":
         fig.update_yaxes(title_text=None, rangemode="tozero", tickformat=",d")
 
         st.plotly_chart(
-            style_chart(fig, 330),
+            style_chart(fig, 360),
             use_container_width=True
         )
-
-
-    # -----------------------------------------------------
-    # INSIGHT
-    # -----------------------------------------------------
-
-    section_heading("💡 Temuan Utama", "Insight otomatis berdasarkan data yang sedang ditampilkan.")
-
-
-    ta = insights_training(
-        train
-    )
-
-    ba = insights_bim(
-        bim
-    )
-
-
-    col1, col2 = st.columns(2)
-
-
-    with col1:
-
-        st.markdown(
-            "#### 🎓 Pelatihan"
-        )
-
-        for text in ta:
-            insight_card(text)
-
-
-    with col2:
-
-        st.markdown(
-            "#### 🤝 Bimbingan"
-        )
-
-        for text in ba:
-            insight_card(text)
 
 
     # -----------------------------------------------------
