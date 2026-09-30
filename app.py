@@ -1996,7 +1996,10 @@ def create_dashboard_pdf(training_df=None, bim_df=None, rekap_df=None, rekap_bim
         story.append(table)
 
     if rekap_bim_df is not None and not rekap_bim_df.empty:
-        story.append(PageBreak())
+        # Untuk PDF Bimbingan Konsultasi, tampilkan hanya ringkasan status.
+        # Rekap detail per lembaga sengaja tidak dimasukkan karena tampilannya
+        # seperti spreadsheet/Excel dan dapat memaksa ReportLab memindahkan
+        # tabel besar ke halaman berikutnya sehingga halaman sebelumnya kosong.
         story.append(Paragraph("🏢 Status Realisasi Bimbingan Konsultasi", styles["PdfHead"]))
         sudah = rekap_bim_df[rekap_bim_df["Status Realisasi"] == "Sudah Terealisasi"]
         belum = rekap_bim_df[rekap_bim_df["Status Realisasi"] == "Belum Terealisasi"]
@@ -2006,25 +2009,6 @@ def create_dashboard_pdf(training_df=None, bim_df=None, rekap_df=None, rekap_bim
             ("Belum Terealisasi", format_number(len(belum))),
             ("Persentase Terealisasi", f"{pct_sudah:.1f}%")
         ])
-        table_data = [["Lembaga/Instansi", "Target Perusahaan", "Realisasi", "Status"]]
-        for _, row in rekap_bim_df.sort_values(["Status Realisasi", "Lembaga/Instansi"]).iterrows():
-            table_data.append([
-                _pdf_text(row.get("Lembaga/Instansi", "")),
-                format_number(row.get("Target Perusahaan", 0)),
-                format_number(row.get("Realisasi Bimbingan", 0)),
-                _pdf_text(row.get("Status Realisasi", ""))
-            ])
-        table = Table(table_data, colWidths=[7.0*cm, 3.0*cm, 2.0*cm, 4.0*cm], repeatRows=1)
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#EAF2F8")),
-            ("TEXTCOLOR", (0,0), (-1,0), colors.HexColor("#17365D")),
-            ("GRID", (0,0), (-1,-1), 0.4, colors.lightgrey),
-            ("FONTSIZE", (0,0), (-1,-1), 7.5),
-            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-            ("TOPPADDING", (0,0), (-1,-1), 5),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 5),
-        ]))
-        story.append(table)
 
     if bim_df is not None and not bim_df.empty:
         if training_df is not None and not training_df.empty:
@@ -2059,7 +2043,7 @@ def create_dashboard_pdf(training_df=None, bim_df=None, rekap_df=None, rekap_bim
 # EXPORT HASIL ANALISIS
 # =========================================================
 
-def create_analysis_excel(training_df=None, bim_df=None):
+def create_analysis_excel(training_df=None, bim_df=None, rekap_bim_df=None, rekap_training_df=None):
     """Membuat workbook Excel analisis yang rapi, terformat, dan siap dibagikan."""
     from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
     from openpyxl.utils import get_column_letter
@@ -2074,6 +2058,25 @@ def create_analysis_excel(training_df=None, bim_df=None):
         name = sheet_name[:31]
         ws = writer.book.create_sheet(name)
         data = df.copy()
+
+        # Excel Table mensyaratkan nama kolom unik dan tidak boleh kosong.
+        # Beberapa file sumber dapat memiliki header yang sama, sehingga
+        # kolom dinormalisasi terlebih dahulu agar proses export tidak gagal.
+        original_columns = [str(c).strip() if str(c).strip() else "Kolom" for c in data.columns]
+        seen = {}
+        unique_columns = []
+        for col in original_columns:
+            count = seen.get(col, 0) + 1
+            seen[col] = count
+            unique_columns.append(col if count == 1 else f"{col} ({count})")
+        data.columns = unique_columns
+
+        # Ubah object kompleks menjadi teks agar aman ditulis ke XLSX.
+        for col in data.columns:
+            if data[col].dtype == "object":
+                data[col] = data[col].map(
+                    lambda v: str(v) if isinstance(v, (list, tuple, set, dict)) else v
+                )
         if title:
             ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max(1, len(data.columns)))
             c = ws.cell(1, 1, title)
@@ -2151,20 +2154,64 @@ def create_analysis_excel(training_df=None, bim_df=None):
 
         if bim_df is not None and not bim_df.empty:
             write_df(writer, bim_df, "Data Bimbingan", "Data Bimbingan — Sesuai Filter Aktif")
+
+            # Rekap status realisasi lembaga/instansi ikut dimasukkan agar
+            # hasil Excel Bimbingan Konsultasi selengkap tampilan dashboard.
+            if rekap_bim_df is not None and not rekap_bim_df.empty:
+                write_df(
+                    writer,
+                    rekap_bim_df,
+                    "Status Realisasi",
+                    "Status Realisasi Bimbingan Konsultasi"
+                )
+
+                status_counts = (
+                    rekap_bim_df["Status Realisasi"]
+                    .fillna("Tidak Diisi")
+                    .value_counts()
+                    .reindex(["Sudah Terealisasi", "Belum Terealisasi"], fill_value=0)
+                    .reset_index()
+                )
+                status_counts.columns = ["Status Realisasi", "Jumlah Lembaga"]
+                write_df(
+                    writer,
+                    status_counts,
+                    "Ringkasan Status",
+                    "Ringkasan Status Realisasi",
+                    False
+                )
+
             summary(writer, "KPI Bimbingan", "KPI Bimbingan Konsultasi", [
                 ["Total Kegiatan", len(bim_df)],
                 ["Total Perusahaan", bim_df["NAMA PERUSAHAAN"].nunique() if "NAMA PERUSAHAAN" in bim_df.columns else 0],
                 ["Total Wilayah", bim_df["NAMA KABUPATEN/KOTA"].nunique() if "NAMA KABUPATEN/KOTA" in bim_df.columns else 0],
                 ["Kategori Bidang Usaha", bim_df["Bidang Usaha Kategori"].nunique() if "Bidang Usaha Kategori" in bim_df.columns else 0],
             ])
-            write_df(writer, monthly_data(bim_df, "Bulan Bimbingan", "Jumlah Kegiatan"), "Bimbingan per Bulan", "Distribusi Bimbingan per Bulan")
+
+            # Rekap analisis yang sama dengan grafik dashboard.
+            if "Bulan Bimbingan" in bim_df.columns:
+                write_df(
+                    writer,
+                    monthly_data(bim_df, "Bulan Bimbingan", "Jumlah Kegiatan"),
+                    "Bimbingan per Bulan",
+                    "Distribusi Bimbingan per Bulan"
+                )
             if "Bidang Usaha Kategori" in bim_df.columns:
-                x = bim_df["Bidang Usaha Kategori"].fillna("Tidak Diisi").value_counts().reset_index(); x.columns = ["Bidang Usaha", "Jumlah Kegiatan"]
+                x = bim_df["Bidang Usaha Kategori"].fillna("Tidak Diisi").value_counts().reset_index()
+                x.columns = ["Bidang Usaha", "Jumlah Kegiatan"]
                 write_df(writer, x, "Bidang Usaha", "Distribusi Bimbingan per Bidang Usaha")
             if "NAMA KABUPATEN/KOTA" in bim_df.columns:
-                x = bim_df["NAMA KABUPATEN/KOTA"].fillna("Tidak Diisi").value_counts().reset_index(); x.columns = ["Wilayah", "Jumlah Kegiatan"]
+                x = bim_df["NAMA KABUPATEN/KOTA"].fillna("Tidak Diisi").value_counts().reset_index()
+                x.columns = ["Wilayah", "Jumlah Kegiatan"]
                 write_df(writer, x, "Wilayah", "Distribusi Bimbingan per Wilayah")
-            write_df(writer, pd.DataFrame({"Insight": [x.replace("**", "") for x in insights_bim(bim_df)]}), "Insight Bimbingan", "Insight Analisis Bimbingan", False)
+
+            write_df(
+                writer,
+                pd.DataFrame({"Insight": [x.replace("**", "") for x in insights_bim(bim_df)]}),
+                "Insight Bimbingan",
+                "Insight Analisis Bimbingan",
+                False
+            )
 
     output.seek(0)
     return output.getvalue()
@@ -3005,14 +3052,6 @@ elif page == "🎓 Pelatihan Produktivitas":
             mime="application/pdf",
             use_container_width=True
         )
-        excel_training = create_analysis_excel(training_df=f)
-        st.download_button(
-            label="📊 Download Data & Analisis Pelatihan (Excel)",
-            data=excel_training,
-            file_name="Hasil_Analisis_Pelatihan_Produktivitas_2026.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
 
 
 # =========================================================
@@ -3434,14 +3473,6 @@ elif page == "🤝 Bimbingan Konsultasi":
             data=pdf_bim,
             file_name="Hasil_Dashboard_Bimbingan_Konsultasi_2026.pdf",
             mime="application/pdf",
-            use_container_width=True
-        )
-        excel_bim = create_analysis_excel(bim_df=f)
-        st.download_button(
-            label="📊 Download Data & Analisis Bimbingan (Excel)",
-            data=excel_bim,
-            file_name="Hasil_Analisis_Bimbingan_Konsultasi_2026.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True
         )
 
