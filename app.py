@@ -566,22 +566,30 @@ MONTHS = [
 # =========================================================
 
 @st.cache_data(show_spinner=False)
-def load_excel(file_bytes):
-
-    xls = pd.ExcelFile(
-        BytesIO(file_bytes),
-        engine="openpyxl"
-    )
-
+def load_excel(file_items):
+    """Membaca satu atau beberapa file Excel dan menggabungkan sheet yang sama."""
     sheets = {}
 
-    for sheet in xls.sheet_names:
-
-        sheets[sheet] = pd.read_excel(
-            xls,
-            sheet_name=sheet,
-            header=None
+    for file_name, file_bytes in file_items:
+        xls = pd.ExcelFile(
+            BytesIO(file_bytes),
+            engine="openpyxl"
         )
+
+        for sheet in xls.sheet_names:
+            df = pd.read_excel(
+                xls,
+                sheet_name=sheet,
+                header=None
+            )
+
+            if sheet in sheets:
+                sheets[sheet] = pd.concat(
+                    [sheets[sheet], df],
+                    ignore_index=True
+                )
+            else:
+                sheets[sheet] = df
 
     return sheets
 
@@ -2315,11 +2323,14 @@ def create_analysis_excel(training_df=None, bim_df=None, rekap_bim_df=None, reka
 # Halaman pembuka hanya ditampilkan sebelum file Excel dipilih.
 # Setelah file dipilih, aplikasi langsung masuk ke menu dashboard.
 
+if "excel_files" not in st.session_state:
+    st.session_state.excel_files = None
+
 if "excel_bytes" not in st.session_state:
     st.session_state.excel_bytes = None
     st.session_state.excel_name = ""
 
-if st.session_state.excel_bytes is None:
+if st.session_state.excel_files is None:
     st.markdown("### MONITORING PROGRAM • 2026")
 
     hero_left, hero_right = st.columns([1.35, 0.65], gap="large", vertical_alignment="center")
@@ -2372,22 +2383,28 @@ if st.session_state.excel_bytes is None:
         uploaded = st.file_uploader(
             "Upload File Excel",
             type=["xlsx"],
-            help="Upload file Excel data produktivitas.",
+            accept_multiple_files=True,
+            help="Upload satu atau beberapa file Excel. Sheet dengan nama yang sama akan digabung otomatis.",
             key="excel_uploader"
         )
 
-    if uploaded is None:
-        st.info("Pilih file Excel untuk melanjutkan ke dashboard analisis.")
+    if not uploaded:
+        st.info("Pilih satu atau beberapa file Excel untuk melanjutkan ke dashboard analisis.")
         st.stop()
 
-    st.session_state.excel_bytes = uploaded.getvalue()
-    st.session_state.excel_name = uploaded.name
+    st.session_state.excel_files = [
+        (file.name, file.getvalue())
+        for file in uploaded
+    ]
+    st.session_state.excel_bytes = st.session_state.excel_files[0][1]
+    st.session_state.excel_name = st.session_state.excel_files[0][0]
     st.rerun()
 
 
 # File yang sudah dipilih disimpan di session agar halaman pembuka tidak
 # muncul lagi ketika pengguna berpindah menu.
-file_bytes = st.session_state.excel_bytes
+file_items = st.session_state.excel_files or [(st.session_state.excel_name, st.session_state.excel_bytes)]
+file_bytes = file_items[0][1]
 
 # =========================================================
 # PROSES DATA
@@ -2398,7 +2415,7 @@ with st.spinner(
 ):
 
     sheets = load_excel(
-        file_bytes
+        tuple(file_items)
     )
 
 
